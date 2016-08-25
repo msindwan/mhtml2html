@@ -1,0 +1,15 @@
+{
+  "name": "mhtml2html",
+  "version": "1.0.0",
+  "description": "Converts .mhtml to a single .html page.",
+  "main": "mhtml2html.js",
+  "bin": {
+    "mhtml2html": "./index.js"
+  },
+  "author": "Mayank Sindwani",
+  "license": "MIT",
+  "dependencies": {
+    "btoa": "^1.1.2",
+    "jsdom": "^9.4.2"
+  }
+}
