@@ -11,10 +11,88 @@
 
 (function(root) {
 
-    // localize existing namespace.
-    var previous_mymodule = root.mhtml2html;
+    /* const */ var CSS_URL_RULE = "url(";
+    /* const */ var RESET_CSS = '\
+                                /* MyCache CSS Reset:  */                        \
+                                /* http://meyerweb.com/eric/tools/css/reset/ */  \
+                                html, body, div, span, applet, object, iframe,   \
+                                h1, h2, h3, h4, h5, h6, p, blockquote, pre,      \
+                                a, abbr, acronym, address, big, cite, code,      \
+                                del, dfn, em, img, ins, kbd, q, s, samp,         \
+                                small, strike, strong, sub, sup, tt, var,        \
+                                b, u, i, center,                                 \
+                                dl, dt, dd, ol, ul, li,                          \
+                                fieldset, form, label, legend,                   \
+                                table, caption, tbody, tfoot, thead, tr, th, td, \
+                                article, aside, canvas, details, embed,          \
+                                figure, figcaption, footer, header, hgroup,      \
+                                menu, nav, output, ruby, section, summary,       \
+                                time, mark, audio, video {                       \
+                                    margin: 0;                                   \
+                                    padding: 0;                                  \
+                                    border: 0;                                   \
+                                    font-size: 100%;                             \
+                                    font: inherit;                               \
+                                    vertical-align: baseline;                    \
+                                }                                                \
+                                article, aside, details, figcaption, figure,     \
+                                footer, header, hgroup, menu, nav, section {     \
+                                    display: block;                              \
+                                }                                                \
+                                body {                                           \
+                                    line-height: 1;                              \
+                                }                                                \
+                                ol, ul {                                         \
+                                    list-style: none;                            \
+                                }                                                \
+                                blockquote, q {                                  \
+                                    quotes: none;                                \
+                                }                                                \
+                                blockquote:before, blockquote:after,             \
+                                q:before, q:after {                              \
+                                    content: \'\';                               \
+                                    content: none;                               \
+                                }                                                \
+                                strong, b {                                      \
+                                    font-weight: bold;                           \
+                                }                                                \
+                                table {                                          \
+                                    border-collapse: collapse;                   \
+                                    border-spacing: 0;                           \
+                                }';  // Overrides browser stylesheets with default values (http://meyerweb.com/eric/tools/css/reset/)
+                                     // TODO: Consider a better way to embed the CSS.
 
-    /*! https://mths.be/quoted-printable v1.0.0 by @mathias | MIT license */
+    // localize existing namespace.
+    var previous_mymodule,
+        quotedPrintable;
+
+    previous_mymodule = root.mhtml2html;
+
+    // Escape unicode and return the ascii representation.
+    // http://stackoverflow.com/questions/834316/how-to-convert-large-utf-8-strings-into-ascii
+    function quote(string) {
+        var escapable = /[\\\"\x00-\x1f\x7f-\uffff]/g,
+        meta = {    // table of character substitutions
+            '\b': '\b',
+            '\t': '\t',
+            '\n': '\n',
+            '\f': '\f',
+            '\r': '\r',
+            '"' : '"',
+            '\\': '\\'
+        };
+
+        escapable.lastIndex = 0;
+        return escapable.test(string) ?
+            string.replace(escapable, function (a) {
+                var c = meta[a];
+                return typeof c === 'string' ? c : '\\' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
+            }) : string;
+    }
+
+    // Quoted printable
+    // Obtained from the quoted-printable package by @mathias
+    // https://mths.be/quoted-printable v1.0.0 by @mathias | MIT license
     function quotedPrintable() {
 
         var stringFromCharCode = String.fromCharCode;
@@ -129,36 +207,6 @@
         };
     }
 
-    // http://stackoverflow.com/questions/14780350/convert-relative-path-to-absolute-using-javascript
-    function resolve(base, relative) {
-        var stack,
-            parts;
-
-        // Ignore paths that start with http, https, or ftp protocols.
-        if (/^((http|https|ftp):\/\/)/.test(relative))
-            return relative;
-
-        if (relative[0] == '/') {
-            var pattern = RegExp("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?");
-            var matches =  base.match(pattern);
-            return matches[2] + '://' + matches[4] + relative;
-        }
-
-        stack = base.split("/"),
-        parts = relative.split("/");
-        stack.pop(); // remove current file name (or empty string)
-                     // (omit if "base" is the current folder without trailing slash)
-        for (var i=0; i<parts.length; i++) {
-            if (parts[i] == ".")
-                continue;
-            if (parts[i] == "..")
-                stack.pop();
-            else
-                stack.push(parts[i]);
-        }
-        return stack.join("/");
-    }
-
     // Asserts a condition.
     function assert(condition, error) {
         if (!condition) {
@@ -166,7 +214,7 @@
         }
     }
 
-    var quotedPrintable = quotedPrintable();
+    quotedPrintable = quotedPrintable();
 
     // Main module.
     var mhtml2html = {
@@ -246,7 +294,6 @@
                 assert (kv.length >= 2, 'Invalid header; Line ' + l);
                 obj[kv[0].trim()] = kv[1].trim();
             }
-
 
             while (state != MHTML_FSM.MHTML_END) {
 
@@ -339,11 +386,9 @@
                         }
 
                         try {
-                            // Decode utf8.
+                            // Decode unicode.
                             asset.data = decodeURIComponent(escape(asset.data));
-                        } catch (e) {
-
-                        }
+                        } catch (e) { }
 
                         // Ignore assets if 'html_only' is set.
                         if (html_only === true && index !== undefined) {
@@ -368,10 +413,8 @@
         // Accepts an mhtml string or parsed object and returns the converted html.
         convert: function(mhtml) {
 
-            var CSS_URL_RULE = "url(";
-
             var index, asset, media, frames;  // Record-keeping.
-            var parser;                       // Parser.
+            var parser, reference;            // Parser.
             var i, j;                         // States.
 
             if (typeof mhtml === typeof '') {
@@ -389,75 +432,163 @@
                 var btoa = require('btoa');
             }
 
-            // Replace URL references in assets.
-            for (asset in media) {
-                if (media[asset].type === "text/css") {
-                    i = 0;
+            // http://stackoverflow.com/questions/14780350/convert-relative-path-to-absolute-using-javascript
+            function resolve(base, relative) {
+                var splitUrl,
+                    stack,
+                    parts,
+                    path;
 
-                    // Find the next css rule with an external reference.
-                    while ((i = media[asset].data.indexOf(CSS_URL_RULE, i)) > 0) {
-                        j = i;
-                        i += CSS_URL_RULE.length;
+                // Ignore paths that start with http, https, or ftp protocols.
+                if (/^((http|https|ftp):\/\/)/.test(relative))
+                    return relative;
 
-                        var reference = media[asset].data.substring(i, media[asset].data.indexOf(')', i));
-                        i += reference.length;
-                        reference = resolve(asset, reference.replace(/(\"|\')/g,''));
+                if (relative[0] == '/') {
+                    splitUrl = base.match(new RegExp("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?"));
 
-                        // Try to resolve the reference.
-                        if (media[reference] !== undefined) {
+                    // Prefix the path with the base protocol and domain.
+                    return splitUrl[2] + '://' + splitUrl[4] + relative;
+                }
 
-                            reference = "url('data:" + media[reference].type + ';base64,'
-                                + ( media[reference].encoding === 'base64' ? media[reference].data : btoa(media[reference].data) ) + "')";
+                // Get the absolute path.
+                function getPath(pop) {
+                    stack = base.split("/"),
+                    parts = relative.split("/");
 
-                            // Replace the url with the base64 encoded string.
-                            media[asset].data = media[asset].data.substring(0, j)
-                                + reference
-                                + media[asset].data.substring(i + 1);
+                    // TODO: Find a better way to determine whether or not we need
+                    // to pop the last filename.
+                    if (pop) {
+                        stack.pop();
+                    }
 
-                            i = j + reference.length;
+                    for (var i=0; i<parts.length; i++) {
+                        if (parts[i] == "..") {
+                            stack.pop();
+                        } else if (parts[i] != ".") {
+                            stack.push(parts[i]);
                         }
                     }
+                    return stack.join("/");
                 }
+
+                path = getPath();
+                if (media[path] == null) {
+                    return getPath(true);
+                }
+
+                return path;
             }
 
-            // Parse the HTML.
-            function parseHTML(location) {
+            // Replace asset references with the corresponding data.
+            function replaceReference(url, asset) {
+                var path, k;
 
-                function mergeResources(documentElem) {
-                    var nodes = [documentElem];
+                // Get the absolute path of the referenced asset.
+                reference = asset.substring(i, asset.indexOf(')', i));
+                i += reference.length;
+                path = resolve(url, reference.replace(/(\"|\')/g,''));
+
+                if (media[path] == null) {
+                    return null;
+                }
+
+                // Replace the reference with an encoded version of the resource.
+                reference = "url('data:" + media[path].type + ';base64,'
+                    + ( media[path].encoding === 'base64' ? media[path].data : btoa(media[path].data) ) + "')";
+
+                k = i; i = j + reference.length;
+
+                // Replace the url with the base64 encoded string.
+                return asset.substring(0, j)
+                    + reference
+                    + asset.substring(k + 1);
+            }
+
+            // Merge resources into the document.
+            function mergeResources(documentElem) {
+                    var childNode, children;
+                    var nodes, reset, base;
+                    var href, src;
+                    var style;
+
+                    nodes = [documentElem];
+                    reset = documentElem.createElement("style");
+
+                    // Create the "reset css" tag.
+                    reset.type = 'text/css';
+                    if (reset.styleSheet){
+                        reset.styleSheet.cssText = RESET_CSS;
+                    } else {
+                        reset.appendChild(documentElem.createTextNode(RESET_CSS));
+                    }
 
                     while (nodes.length) {
 
-                        var childNode = nodes.shift(),
-                            children = new Array(Object.keys(childNode.childNodes).length);
+                        childNode = nodes.shift();
+                        children = new Array(Object.keys(childNode.childNodes).length);
 
                         for (i = 0; i < children.length; i++) {
                             children[i] = childNode.childNodes[i];
                         }
 
+                        // Resolve each node.
                         children.forEach(function(child) {
-                            var href, src;
+                            if (child.tagName === 'HEAD') {
+                                // Append reset css.
+                                child.insertBefore(reset, child.firstChild);
+
+                                // Link targets should be directed to the outer frame.
+                                base = documentElem.createElement("base");
+                                base.setAttribute("target", "_parent");
+                                child.insertBefore(base, child.firstChild);
+                            }
 
                             if (child.getAttribute) {
                                 href = child.getAttribute('href');
                                 src  = child.getAttribute('src');
 
-                                // TODO: check style attribute
-
+                                // Resolve links.
                                 if (href && media[href]) {
+                                    if (media[href].type === "text/css") {
+                                        i = 0;
+
+                                        // Find the next css rule with an external reference.
+                                        while ((i = media[href].data.indexOf(CSS_URL_RULE, i)) > 0) {
+                                            j = i; i += CSS_URL_RULE.length;
+
+                                            // Try to resolve the reference.
+                                            reference = replaceReference(href, media[href].data);
+                                            if (reference != null) {
+                                                media[href].data = reference;
+                                            }
+                                        }
+                                    }
+
                                     child.setAttribute('href', 'data:' + media[href].type
                                         + ';' + media[href].encoding
-                                        + ',' + encodeURIComponent(media[href].data));
+                                        + ',' + encodeURIComponent(quote(media[href].data)));
                                 }
 
-                                if (src) {
-                                    if (media[src]) {
-                                        child.setAttribute('src', 'data:' + media[src].type
-                                            + ';' + media[src].encoding
-                                            + ',' + encodeURIComponent(media[src].data));
+                                // Resolve scripts and images.
+                                if (src && media[src]) {
+                                    child.setAttribute('src', 'data:' + media[src].type
+                                        + ';' + media[src].encoding
+                                        + ',' + encodeURIComponent(media[src].data));
+                                }
 
-                                    } else if (src.substring(0, 4) === 'cid:') {
-                                        // TODO
+                                // Resolve inline-scripts.
+                                for (style in child.style) {
+                                    if (typeof child.style[style] === typeof '') {
+                                        // Find the next css rule with an external reference.
+                                        while ((i = child.style[style].indexOf(CSS_URL_RULE, i)) > 0) {
+                                            j = i; i += CSS_URL_RULE.length;
+
+                                            // Try to resolve the reference.
+                                            reference = replaceReference(index, child.style[style]);
+                                            if (reference != null) {
+                                                child.style[style] = reference;
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -471,24 +602,21 @@
                     }
 
                     return documentElem;
-                }
-
-                // Return the parsed HTML with resources
-                if( typeof DOMParser === 'undefined' ) {
-                    assert( typeof require !== 'undefined' , 'Require is not defined.');
-
-                    // Use jsdom to parse the html.
-                    parser = require('jsdom').jsdom;
-                    return mergeResources(parser(media[location].data, {}));
-
-                } else {
-                    // Use the browser's dom parser.
-                    parser = new DOMParser();
-                    return mergeResources(parser.parseFromString(media[location].data, "text/html"));
-                }
             }
 
-            return parseHTML(index);
+            // Return the parsed HTML with resources
+            if( typeof DOMParser === 'undefined' ) {
+                assert( typeof require !== 'undefined' , 'Require is not defined.');
+
+                // Use jsdom to parse the html.
+                parser = require('jsdom').jsdom;
+                return mergeResources(parser(media[index].data, {}));
+
+            } else {
+                // Use the browser's dom parser.
+                parser = new DOMParser();
+                return mergeResources(parser.parseFromString(media[index].data, "text/html"));
+            }
         }
     };
 
