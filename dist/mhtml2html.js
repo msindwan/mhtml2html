@@ -642,4 +642,4 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     } else if (root != undefined) {
         root.mhtml2html = mhtml2html;
     }
-})(undefined);
+})((typeof window === 'undefined' ? 'undefined' : _typeof(window)) !== (typeof undefined === 'undefined' ? 'undefined' : _typeof(undefined)) ? window : null);

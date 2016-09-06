@@ -641,4 +641,4 @@
         root.mhtml2html = mhtml2html;
     }
 
-})(this);
+})((typeof window !== typeof undefined ? window : null));
