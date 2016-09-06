@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 
+/**
+ * index.js
+ *
+ * @Author : Mayank Sindwani
+ * @Date   : 2016-09-05
+ * @Description : CLI for mhtml2html.
+ *
+ * The MIT License(MIT)
+ * Copyright(c) 2016 Mayank Sindwani
+ **/
+
 'use strict';
 
-var mhtml2html = require('./mhtml2html');
+var mhtml2html = require('./dist/mhtml2html');
 var fs         = require('fs');
 
 // Ensure that an input and output path is provided.
