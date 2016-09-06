@@ -59,10 +59,12 @@ reader.readAsText(mhtmlBlob);
 
 ## API
 
-```mhtml2html.noConflit()```
+`mhtml2html.noConflit()`
+ 
 * Returns any previously defined module with the same name.
 
-```mhtml2html.parse(mhtml_string, html_only = false);```
+`mhtml2html.parse(mhtml_string, html_only = false);`
+
 * Accepts an MHTML String.
 * If html_only === true, returns the html document without resources
 * Else returns an MHTML parsed object:
@@ -82,7 +84,8 @@ reader.readAsText(mhtmlBlob);
 }
 ~~~~
 
-```mhtml2html.convert(mhtml_string or mhtml_object);```
+`mhtml2html.convert(mhtml_string or mhtml_object);`
+
 * Accepts an MHTML String or parsed MHTML Object
 * Returns an html document element.
 
