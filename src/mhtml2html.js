@@ -13,6 +13,13 @@
 
 (function(root) {
 
+    // Avoid preprocessors from bundling runtime dependencies.
+    let _require;
+
+    if (typeof require !== 'undefined') {
+        _require = require;
+    }
+
     const CSS_URL_RULE = "url(";
     const RESET_CSS = '\
         /* MyCache CSS Reset:  */                        \
@@ -401,6 +408,15 @@
 
                         // Ignore assets if 'html_only' is set.
                         if (html_only === true && index !== undefined) {
+                            if( typeof DOMParser === 'undefined' ) {
+                                assert( typeof _require !== 'undefined' , 'Require is not defined.');
+
+                                // Use jsdom to parse the html.
+                                parser = _require('jsdom').jsdom;
+                                return parser(asset.data, {});
+                            }
+
+                            // Use the browser's dom parser.
                             parser = new DOMParser();
                             return parser.parseFromString(asset.data, "text/html");
                         }
@@ -441,9 +457,12 @@
             assert(typeof index  === typeof ' ', 'MHTML error: invalid index' );
             assert(media[index] && media[index].type === "text/html", 'MHTML error: invalid index');
 
+            let _btoa;
             if( typeof btoa === 'undefined' ) {
-                assert( typeof require !== 'undefined' , 'Require is not defined.');
-                var btoa = require('btoa');
+                assert( _require !== 'undefined' , 'Require is not defined.');
+                _btoa = _require('btoa');
+            } else {
+                _btoa = btoa;
             }
 
             // http://stackoverflow.com/questions/14780350/convert-relative-path-to-absolute-using-javascript
@@ -507,7 +526,7 @@
                 }
 
                 // Replace the reference with an encoded version of the resource.
-                reference = `url('data:${media[path].type};base64,${( media[path].encoding === 'base64' ? media[path].data : btoa(media[path].data) )}')`;
+                reference = `url('data:${media[path].type};base64,${( media[path].encoding === 'base64' ? media[path].data : _btoa(media[path].data) )}')`;
 
                 k = i; i = j + reference.length;
 
@@ -617,17 +636,16 @@
 
             // Return the parsed HTML with resources
             if( typeof DOMParser === 'undefined' ) {
-                assert( typeof require !== 'undefined' , 'Require is not defined.');
+                assert( typeof _require !== 'undefined' , 'Require is not defined.');
 
                 // Use jsdom to parse the html.
-                parser = require('jsdom').jsdom;
+                parser = _require('jsdom').jsdom;
                 return mergeResources(parser(media[index].data, {}));
-
-            } else {
-                // Use the browser's dom parser.
-                parser = new DOMParser();
-                return mergeResources(parser.parseFromString(media[index].data, "text/html"));
             }
+
+            // Use the browser's dom parser.
+            parser = new DOMParser();
+            return mergeResources(parser.parseFromString(media[index].data, "text/html"));
         }
     };
 
@@ -641,4 +659,4 @@
         root.mhtml2html = mhtml2html;
     }
 
-})((typeof window !== typeof undefined ? window : null));
+})((typeof window !== 'undefined' ? window : null));

@@ -1,6 +1,6 @@
 {
   "name": "mhtml2html",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Converts .mhtml to a single .html page.",
   "repository": {
     "type": "git",
@@ -9,6 +9,9 @@
   "main": "dist/mhtml2html-min.js",
   "bin": {
     "mhtml2html": "./index.js"
+  },
+  "engines": {
+    "node": ">=4.3.2"
   },
   "author": "Mayank Sindwani",
   "license": "MIT",
