@@ -21,62 +21,6 @@
     }
 
     const CSS_URL_RULE = "url(";
-    const RESET_CSS = '\
-        /* MyCache CSS Reset:  */                        \
-        /* http://meyerweb.com/eric/tools/css/reset/ */  \
-        html, body, div, span, applet, object, iframe,   \
-        blockquote, pre,                                 \
-        a, abbr, acronym, address, big, cite, code,      \
-        del, dfn, em, img, ins, kbd, q, s, samp,         \
-        small, strike, strong, sub, sup, tt, var,        \
-        b, u, i, center,                                 \
-        dl, dt, dd, ol, ul, li,                          \
-        fieldset, form, label, legend,                   \
-        table, caption, tbody, tfoot, thead, tr, th, td, \
-        article, aside, canvas, details, embed,          \
-        figure, figcaption, footer, header, hgroup,      \
-        menu, nav, output, ruby, section, summary,       \
-        time, mark, audio, video {                       \
-            margin: 0;                                   \
-            padding: 0;                                  \
-            border: 0;                                   \
-            font-size: 100%;                             \
-            font: inherit;                               \
-            vertical-align: baseline;                    \
-        }                                                \
-        h1, h2, h3, h4, h5, h6, p {                      \
-            padding: 0;                                  \
-            border: 0;                                   \
-            font-size: 100%;                             \
-            font: inherit;                               \
-            vertical-align: baseline;                    \
-        }                                                \
-        article, aside, details, figcaption, figure,     \
-        footer, header, hgroup, menu, nav, section {     \
-            display: block;                              \
-        }                                                \
-        body {                                           \
-            line-height: 1;                              \
-        }                                                \
-        ol, ul {                                         \
-            list-style: none;                            \
-        }                                                \
-        blockquote, q {                                  \
-            quotes: none;                                \
-        }                                                \
-        blockquote:before, blockquote:after,             \
-        q:before, q:after {                              \
-            content: \'\';                               \
-            content: none;                               \
-        }                                                \
-        strong, b {                                      \
-            font-weight: bold;                           \
-        }                                                \
-        table {                                          \
-            border-collapse: collapse;                   \
-            border-spacing: 0;                           \
-        }';  // Overrides browser stylesheets with default values (http://meyerweb.com/eric/tools/css/reset/)
-             // TODO: Consider a better way to embed the CSS.
 
     // localize existing namespace.
     let previous_mymodule,
@@ -233,7 +177,7 @@
     })();
 
     // Main module.
-    let mhtml2html = {
+    const mhtml2html = {
 
         // Returns the module that was previously defined (if any) for conflict resolution.
         noConflict: () => {
@@ -438,9 +382,9 @@
         // Accepts an mhtml string or parsed object and returns the converted html.
         convert: (mhtml) => {
 
-            var index, media, frames;  // Record-keeping.
-            var parser, reference;     // Parser.
-            var i, j;                  // States.
+            let index, media, frames;  // Record-keeping.
+            let parser, reference;     // Parser.
+            let i, j;                  // States.
 
             if (typeof mhtml === typeof '') {
                 mhtml = mhtml2html.parse(mhtml);
@@ -526,7 +470,11 @@
                 }
 
                 // Replace the reference with an encoded version of the resource.
-                reference = `url('data:${media[path].type};base64,${( media[path].encoding === 'base64' ? media[path].data : _btoa(media[path].data) )}')`;
+                reference = `url('data:${media[path].type};base64,${(
+                    media[path].encoding === 'base64' ?
+                    media[path].data :
+                    _btoa(unescape(encodeURIComponent(quote(media[path].data))))
+                )}')`;
 
                 k = i; i = j + reference.length;
 
@@ -536,21 +484,12 @@
 
             // Merge resources into the document.
             function mergeResources(documentElem) {
-                var childNode, children;
-                var nodes, reset, base;
-                var href, src;
-                var style;
+                let childNode, children;
+                let nodes, base;
+                let href, src;
+                let style;
 
                 nodes = [documentElem];
-                reset = documentElem.createElement("style");
-
-                // Create the "reset css" tag.
-                reset.type = 'text/css';
-                if (reset.styleSheet){
-                    reset.styleSheet.cssText = RESET_CSS;
-                } else {
-                    reset.appendChild(documentElem.createTextNode(RESET_CSS));
-                }
 
                 while (nodes.length) {
 
@@ -563,25 +502,26 @@
 
                     // Resolve each node.
                     children.forEach(function(child) {
-                        if (child.tagName === 'HEAD') {
-                            // Append reset css.
-                            child.insertBefore(reset, child.firstChild);
-
-                            // Link targets should be directed to the outer frame.
-                            base = documentElem.createElement("base");
-                            base.setAttribute("target", "_parent");
-                            child.insertBefore(base, child.firstChild);
-                        }
 
                         if (child.getAttribute) {
                             href = child.getAttribute('href');
                             src  = child.getAttribute('src');
+                        }
 
-                            // Resolve links.
-                            if (href && media[href]) {
-                                if (media[href].type === "text/css") {
+                        switch(child.tagName) {
+                            case 'HEAD':
+                                 // Link targets should be directed to the outer frame.
+                                base = documentElem.createElement("base");
+                                base.setAttribute("target", "_parent");
+                                child.insertBefore(base, child.firstChild);
+                                break;
+
+                            case 'LINK':
+                                if (typeof media[href] !== 'undefined' && media[href].type === 'text/css') {
+                                    style = documentElem.createElement('style');
+                                    style.type = 'text/css';
+
                                     i = 0;
-
                                     // Find the next css rule with an external reference.
                                     while ((i = media[href].data.indexOf(CSS_URL_RULE, i)) > 0) {
                                         j = i; i += CSS_URL_RULE.length;
@@ -592,35 +532,44 @@
                                             media[href].data = reference;
                                         }
                                     }
+
+                                    style.appendChild(documentElem.createTextNode(quote(media[href].data)));
+                                    childNode.replaceChild(style, child);
+                                }
+                                break;
+
+                            case 'IMG':
+                                if (typeof media[src] !== 'undefined' && media[src].type.includes('image')) {
+                                    switch(media[src].encoding) {
+                                        case 'quoted-printable':
+                                            reference = `data:${media[src].type};utf8,${quotedPrintable.decode(media[src].data)}`;
+                                            break;
+                                        case 'base64':
+                                            reference = `data:${media[src].type};base64,${media[src].data}`;
+                                            break;
+                                        default:
+                                            reference = `data:${media[src].type};base64,${_btoa(unescape(encodeURIComponent(quote(media[src].data))))}`;
+                                            break;
+                                    }
+                                    child.setAttribute('src', reference);
                                 }
 
-                                child.setAttribute('href', 'data:' + media[href].type
-                                    + ';' + media[href].encoding
-                                    + ',' + encodeURIComponent(quote(media[href].data)));
-                            }
+                            default:
+                                for (style in child.style) {
+                                    if (typeof child.style[style] === 'string') {
+                                        // Find the next css rule with an external reference.
+                                        while ((i = child.style[style].indexOf(CSS_URL_RULE, i)) > 0) {
+                                            j = i; i += CSS_URL_RULE.length;
 
-                            // Resolve scripts and images.
-                            if (src && media[src]) {
-                                child.setAttribute('src', 'data:' + media[src].type
-                                    + ';' + media[src].encoding
-                                    + ',' + encodeURIComponent(media[src].data));
-                            }
-
-                            // Resolve inline-scripts.
-                            for (style in child.style) {
-                                if (typeof child.style[style] === typeof '') {
-                                    // Find the next css rule with an external reference.
-                                    while ((i = child.style[style].indexOf(CSS_URL_RULE, i)) > 0) {
-                                        j = i; i += CSS_URL_RULE.length;
-
-                                        // Try to resolve the reference.
-                                        reference = replaceReference(index, child.style[style]);
-                                        if (reference != null) {
-                                            child.style[style] = reference;
+                                            // Try to resolve the reference.
+                                            reference = replaceReference(index, child.style[style]);
+                                            if (reference != null) {
+                                                child.style[style] = reference;
+                                            }
                                         }
                                     }
                                 }
-                            }
+                                break;
                         }
 
                         if (child.removeAttribute) {

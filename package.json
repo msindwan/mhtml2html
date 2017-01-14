@@ -1,6 +1,6 @@
 {
   "name": "mhtml2html",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Converts .mhtml to a single .html page.",
   "repository": {
     "type": "git",

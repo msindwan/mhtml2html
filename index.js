@@ -13,6 +13,7 @@
 
 'use strict';
 
+var serializeDocument = require("jsdom").serializeDocument;
 var mhtml2html = require('./dist/mhtml2html');
 var fs         = require('fs');
 
@@ -27,7 +28,7 @@ fs.readFile(process.argv[2], 'utf8', function (err, data) {
         throw err;
     }
 
-    fs.writeFile(process.argv[3], mhtml2html.convert(data).documentElement.innerHTML, function(err) {
+    fs.writeFile(process.argv[3], serializeDocument(mhtml2html.convert(data)), function(err) {
         if(err) {
             return console.log(err);
         }

@@ -1,5 +1,12 @@
 # mhtml2html Change Log
 
+## [v1.0.4]
+
+** Bug fixes **
+
+- Remove CSS reset
+- Fix image references
+
 ## [v1.0.3]
 
 ** Bug fixes **
