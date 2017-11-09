@@ -4,7 +4,7 @@
   "description": "Converts .mhtml to a single .html page.",
   "repository": {
     "type": "git",
-    "url": "git+https://msindwan@bitbucket.org/msindwan/mhtml2html.git"
+    "url": "git+https://github.com/msindwan/mhtml2html.git"
   },
   "main": "dist/mhtml2html-min.js",
   "bin": {
