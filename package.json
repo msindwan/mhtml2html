@@ -15,6 +15,7 @@
   },
   "author": "Mayank Sindwani",
   "license": "MIT",
+  "homepage": "https://github.com/msindwan/mhtml2html#readme",
   "babel": {
     "presets": [
       "es2015",
