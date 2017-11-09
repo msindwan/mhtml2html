@@ -9,7 +9,7 @@
 
 ### Node.js
 
-~~~~
+``` js
 var mhtml2html = require('mhtml2html');
 
 fs.readFile('input.mhtml', 'utf8', function (err, input) {
@@ -31,8 +31,7 @@ fs.readFile('input.mhtml', 'utf8', function (err, input) {
         }
     });
 });
-
-~~~~
+```
 
 You can also use it from the command line by running:
 
@@ -42,7 +41,7 @@ You can also use it from the command line by running:
 
 Include ```mhtml2html-min.js``` from the dist folder.
 
-~~~~
+``` js
 var reader = new FileReader();
 
 reader.addEventListener("loadend", function() {
@@ -55,12 +54,12 @@ reader.addEventListener("loadend", function() {
 });
 
 reader.readAsText(mhtmlBlob);
-~~~~
+```
 
 ## API
 
 `mhtml2html.noConflit()`
- 
+
 * Returns any previously defined module with the same name.
 
 `mhtml2html.parse(mhtml_string, html_only = false);`
@@ -69,20 +68,19 @@ reader.readAsText(mhtmlBlob);
 * If html_only === true, returns the html document without resources
 * Else returns an MHTML parsed object:
 
-~~~~
+``` json
 {
-    index : "<html-index-url>",
-    assets: {
+    "index" : "<html-index-url>",
+    "assets": {
         "<asset-url>" : {
-            data : "<resource-string>",
-            id: "<frame-id>",
-            type: "<resource-type">,
-            encoding: "<resource-encoding>"
+            "data" : "<resource-string>",
+            "id": "<frame-id>",
+            "type": "<resource-type",
+            "encoding": "<resource-encoding>"
         }
-        ....
     }
 }
-~~~~
+```
 
 `mhtml2html.convert(mhtml_string or mhtml_object);`
 
