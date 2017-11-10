@@ -58,7 +58,7 @@ reader.readAsText(mhtmlBlob);
 
 ## API
 
-`mhtml2html.noConflit()`
+`mhtml2html.noConflict()`
 
 * Returns any previously defined module with the same name.
 
@@ -90,4 +90,4 @@ reader.readAsText(mhtmlBlob);
 
 ## License
 
-Released under the MIT License (see the repository for more details)
+Released under the MIT License
