@@ -1,5 +1,7 @@
 # mhtml2html.js
 
+[![npm version](https://badge.fury.io/js/mhtml2html.svg)](https://badge.fury.io/js/mhtml2html) [![circleci](https://circleci.com/gh/msindwan/mhtml2html.svg?style=shield&circle-token=:circle-token)](https://circleci.com/gh/msindwan/mhtml2html)
+
 `mhtml2html` converts `MHTML` files to a single `HTML` file using javascript.
 
 ## Usage
