@@ -67,7 +67,7 @@ describe('Test parsing MHTML', function () {
 
     it("Should raise an exception for invalid MHTML (Missing Asset Boundary)", function(done) {
         readMHTML('missing_boundary.mhtml', (data) => {
-            chai.expect(() => { mhtml2html.parse(data); }).to.throw('Expected boundary; Line 10');
+            chai.expect(() => { mhtml2html.parse(data); }).to.throw('Expected boundary; Line 9');
             done();
         });
     });
@@ -123,4 +123,3 @@ describe('Test converting MHTML to HTML', function () {
     });
 
 });
-
