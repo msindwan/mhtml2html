@@ -7,6 +7,7 @@
 ## Usage
 
 `mhtml2html` is compatible with Node >= v4.3.2.
+
 **It has only been tested with MHTML files built and used with the latest versions of Chrome**
 
 ### Node.js
@@ -60,14 +61,14 @@ reader.readAsText(mhtmlBlob);
 
 ## API
 
-`mhtml2html.noConflict()`
+`mhtml2html.noConflict();`
 
 * Returns any previously defined module with the same name.
 
 `mhtml2html.parse(mhtml_string, html_only = false);`
 
 * Accepts an MHTML String.
-* If html_only === true, returns the html document without resources
+* If html_only === true, returns the html document without resources.
 * Else returns an MHTML parsed object:
 
 ``` json
@@ -86,7 +87,7 @@ reader.readAsText(mhtmlBlob);
 
 `mhtml2html.convert(mhtml_string or mhtml_object);`
 
-* Accepts an MHTML String or parsed MHTML Object
+* Accepts an MHTML String or parsed MHTML Object.
 * Returns an html document element.
 
 
