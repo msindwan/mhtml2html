@@ -2,5 +2,5 @@ tests
 src
 .eslintrc
 .gitignore
-.circleci
+.circleci/
 gulpfile.babel.js
