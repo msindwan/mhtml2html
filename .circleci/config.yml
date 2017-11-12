@@ -35,3 +35,4 @@ jobs:
 
       # run tests!
       - run: ./node_modules/gulp/bin/gulp.js test
+      - run: ./node_modules/gulp/bin/gulp.js lint
