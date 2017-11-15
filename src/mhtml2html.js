@@ -15,8 +15,8 @@ const quotedPrintable = require('quoted-printable');
 let _mhtml2html, _btoa, _dom;
 (() => {
     // localize existing namespace.
-    if (root != undefined) {
-        _mhtml2html = root.mhtml2html;
+    if (typeof window !== 'undefined') {
+        _mhtml2html = window.mhtml2html;
     }
 
     // Avoid preprocessors from bundling runtime dependencies.
@@ -75,9 +75,11 @@ function quote(string) {
 // Main module.
 const mhtml2html = {
 
-    // Returns the module that was previously defined (if any) for conflict resolution.
+    // Resets the module that was previously defined (if any) for conflict resolution.
     noConflict: () => {
-        root.mhtml2html = _mhtml2html;
+        if (typeof window !== 'undefined') {
+            window.mhtml2html = _mhtml2html;
+        }
         return mhtml2html;
     },
 

@@ -63,7 +63,7 @@ reader.readAsText(mhtmlBlob);
 
 `mhtml2html.noConflict();`
 
-* Returns any previously defined module with the same name.
+* Resets the module that was previously defined (if any) for conflict resolution.
 
 `mhtml2html.parse(mhtml_string, html_only = false);`
 

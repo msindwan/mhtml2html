@@ -179,8 +179,8 @@ var _mhtml2html = void 0,
     _dom = void 0;
 (function () {
     // localize existing namespace.
-    if (root != undefined) {
-        _mhtml2html = root.mhtml2html;
+    if (typeof window !== 'undefined') {
+        _mhtml2html = window.mhtml2html;
     }
 
     // Avoid preprocessors from bundling runtime dependencies.
@@ -246,9 +246,11 @@ function quote(string) {
 // Main module.
 var mhtml2html = {
 
-    // Returns the module that was previously defined (if any) for conflict resolution.
+    // Resets the module that was previously defined (if any) for conflict resolution.
     noConflict: function noConflict() {
-        root.mhtml2html = _mhtml2html;
+        if (typeof window !== 'undefined') {
+            window.mhtml2html = _mhtml2html;
+        }
         return mhtml2html;
     },
 
