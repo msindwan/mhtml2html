@@ -23,8 +23,11 @@ const gulp = help(tasks);
 
 gulp.task('build', 'Creates the distribution scripts', () => {
     // Transpile es6 to es5 and output debug + production scripts.
-    return browserify('src/mhtml2html.js')
-        .transform("babelify", { presets: ["env"] })
+    return browserify({
+            entries: 'src/mhtml2html.js',
+            standalone: 'mhtml2html'
+        })
+        .transform("babelify", { presets: ["env"],  })
         .bundle()
         .on('error', function (err) {
             console.log(err.toString());

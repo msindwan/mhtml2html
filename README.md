@@ -63,8 +63,8 @@ reader.readAsText(mhtmlBlob);
 
 `mhtml2html.noConflict();`
 
-* Resets the module that was previously defined (if any) for conflict resolution.
-
+* Resets the module that was previously for browser conflict resolution
+* Returns a localized version of mhtml2html
 `mhtml2html.parse(mhtml_string, html_only = false);`
 
 * Accepts an MHTML String.
