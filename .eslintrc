@@ -19,13 +19,5 @@
       "no-control-regex": 0,
       "no-fallthrough": 0
    },
-   "settings": {
-      "react": {
-         "pragma": "React"
-      }
-   },
-   "plugins": [
-      "react"
-   ],
-   "extends": ["eslint:recommended", "plugin:react/recommended"]
+   "extends": ["eslint:recommended"]
 }

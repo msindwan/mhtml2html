@@ -11,11 +11,9 @@
  * Copyright(c) 2016 Mayank Sindwani
  **/
 
-'use strict';
-
-var serializeDocument = require("jsdom").serializeDocument;
-var mhtml2html = require('./src/mhtml2html');
-var fs         = require('fs');
+const serializeDocument = require("jsdom").serializeDocument;
+const mhtml2html        = require('./src/mhtml2html');
+const fs                = require('fs');
 
 // Ensure that an input and output path is provided.
 if (process.argv[2] === undefined || process.argv[3] === undefined) {
@@ -23,12 +21,12 @@ if (process.argv[2] === undefined || process.argv[3] === undefined) {
 }
 
 // Read the file provided and return the html document as a string.
-fs.readFile(process.argv[2], 'utf8', function (err, data) {
+fs.readFile(process.argv[2], 'utf8',  (err, data) => {
     if (err) {
         throw err;
     }
 
-    fs.writeFile(process.argv[3], serializeDocument(mhtml2html.convert(data)), function(err) {
+    fs.writeFile(process.argv[3], serializeDocument(mhtml2html.convert(data)), err => {
         if(err) {
             return console.log(err);
         }

@@ -9,9 +9,9 @@
  * Copyright(c) 2016 Mayank Sindwani
  **/
 
-import mhtml2html from '../src/mhtml2html';
-import chai       from 'chai';
-import fs         from 'fs';
+const mhtml2html = require('../src/mhtml2html');
+const chai       = require('chai');
+const fs         = require('fs');
 
 function readMHTML(file, callback) {
     fs.readFile(`tests/templates/${file}`, 'utf8', function (err, data) {
