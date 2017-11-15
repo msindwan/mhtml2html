@@ -9,7 +9,7 @@
  * Copyright(c) 2016 Mayank Sindwani
  **/
 
-import mhtml2html from '../dist/mhtml2html-min';
+import mhtml2html from '../src/mhtml2html';
 import chai       from 'chai';
 import fs         from 'fs';
 

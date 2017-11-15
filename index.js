@@ -14,7 +14,7 @@
 'use strict';
 
 var serializeDocument = require("jsdom").serializeDocument;
-var mhtml2html = require('./dist/mhtml2html');
+var mhtml2html = require('./src/mhtml2html');
 var fs         = require('fs');
 
 // Ensure that an input and output path is provided.
