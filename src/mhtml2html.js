@@ -19,21 +19,27 @@ let _mhtml2html, _btoa, _dom;
         _mhtml2html = root.mhtml2html;
     }
 
-    if (typeof require !== 'undefined') {
-        // Avoid preprocessors from bundling runtime dependencies.
-        let _require = require;
+    // Avoid preprocessors from bundling runtime dependencies.
+    const _require = typeof require !== 'undefined' ? require : null;
+
+    // _dom
+    if (typeof DOMParser === 'undefined') {
         let _parser = _require('jsdom').jsdom;
-        _btoa = _require('btoa');
         _dom = (...args) => {
             return _parser(...args, {});
         };
     } else {
-        // Default to built-in browser functions.
         let _parser = new DOMParser();
-        _btoa = btoa;
         _dom = (...args) => {
             return _parser.parseFromString(...args, "text/html");
         };
+    }
+
+    // _btoa
+    if (typeof btoa === 'undefined') {
+        _btoa = _require('btoa');
+    } else {
+        _btoa = btoa;
     }
 })();
 

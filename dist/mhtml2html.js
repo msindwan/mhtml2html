@@ -183,11 +183,12 @@ var _mhtml2html = void 0,
         _mhtml2html = root.mhtml2html;
     }
 
-    if (typeof require !== 'undefined') {
-        // Avoid preprocessors from bundling runtime dependencies.
-        var _require = require;
+    // Avoid preprocessors from bundling runtime dependencies.
+    var _require = typeof require !== 'undefined' ? require : null;
+
+    // _dom
+    if (typeof DOMParser === 'undefined') {
         var _parser = _require('jsdom').jsdom;
-        _btoa = _require('btoa');
         _dom = function _dom() {
             for (var _len = arguments.length, args = Array(_len), _key = 0; _key < _len; _key++) {
                 args[_key] = arguments[_key];
@@ -196,9 +197,7 @@ var _mhtml2html = void 0,
             return _parser.apply(undefined, args.concat([{}]));
         };
     } else {
-        // Default to built-in browser functions.
         var _parser2 = new DOMParser();
-        _btoa = btoa;
         _dom = function _dom() {
             for (var _len2 = arguments.length, args = Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
                 args[_key2] = arguments[_key2];
@@ -206,6 +205,13 @@ var _mhtml2html = void 0,
 
             return _parser2.parseFromString.apply(_parser2, args.concat(["text/html"]));
         };
+    }
+
+    // _btoa
+    if (typeof btoa === 'undefined') {
+        _btoa = _require('btoa');
+    } else {
+        _btoa = btoa;
     }
 })();
 
