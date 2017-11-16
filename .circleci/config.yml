@@ -3,14 +3,11 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 version: 2
-machine:
-  node:
-    version: 4.3.2
 jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/node:latest
+      - image: circleci/node:4
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
