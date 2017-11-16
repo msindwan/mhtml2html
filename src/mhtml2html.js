@@ -5,17 +5,20 @@
  * @Date   : 2016-09-05
  * @Description : Converts mhtml to html.
  *
- * The MIT License(MIT)
+ * Licensed under the MIT License
  * Copyright(c) 2016 Mayank Sindwani
  **/
+
+'use strict';
 
 const quotedPrintable = require('quoted-printable');
 const url = require('url');
 
-// Runtime dependencies.
-let _mhtml2html, _btoa, _dom;
-(() => {
-    // Localize existing namespace.
+let _mhtml2html, btoa, dom;
+
+// Loads runtime dependencies.
+function loadDependencies() {
+    // Localize any existing module named mhtml2html.
     if (typeof window !== 'undefined') {
         _mhtml2html = window.mhtml2html;
     }
@@ -23,26 +26,15 @@ let _mhtml2html, _btoa, _dom;
     // Avoid preprocessors from bundling runtime dependencies.
     const _require = typeof require !== 'undefined' ? require : null;
 
-    // _dom
+    btoa = typeof btoa === 'undefined' ? _require('btoa') : btoa;
     if (typeof DOMParser === 'undefined') {
-        let _parser = _require('jsdom').jsdom;
-        _dom = (...args) => {
-            return _parser(...args, {});
-        };
+        const parser = _require('jsdom').jsdom;
+        dom = () => { return parser(arguments, {}); };
     } else {
-        let _parser = new DOMParser();
-        _dom = (...args) => {
-            return _parser.parseFromString(...args, "text/html");
-        };
+        const parser = new DOMParser().parseFromString;
+        dom = () => { return parser(arguments, "text/html"); };
     }
-
-    // _btoa
-    if (typeof btoa === 'undefined') {
-        _btoa = _require('btoa');
-    } else {
-        _btoa = btoa;
-    }
-})();
+}
 
 // Asserts a condition.
 function assert(condition, error) {
@@ -52,58 +44,26 @@ function assert(condition, error) {
     return true;
 }
 
-// Escape unicode and return the ascii representation.
-// http://stackoverflow.com/questions/834316/how-to-convert-large-utf-8-strings-into-ascii
-function quote(string) {
-    const escapable = /[\\\"\x00-\x1f\x7f-\uffff]/g,
-        meta = { // table of character substitutions
-            '\b': '\b',
-            '\t': '\t',
-            '\n': '\n',
-            '\f': '\f',
-            '\r': '\r',
-            '"' : '"',
-            '\\': '\\'
-        };
-
-    escapable.lastIndex = 0;
-    return escapable.test(string) ?
-        string.replace(escapable, (a) => {
-            var c = meta[a];
-            return typeof c === 'string' ? c : '\\' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
-        }) : string;
-}
-
 // Replace asset references with the corresponding data.
 function replaceReferences(media, ref, asset) {
     const CSS_URL_RULE = 'url(';
-    let reference, path, i, j, k;
-    i = j = 0;
+    let reference, i;
 
-    while ((i = asset.indexOf(CSS_URL_RULE, i)) > 0) {
-        j = i;
+    for (i = 0; (i = asset.indexOf(CSS_URL_RULE, i)) > 0; i += reference.length) {
         i += CSS_URL_RULE.length;
+        reference = asset.substring(i, asset.indexOf(')', i));
 
         // Get the absolute path of the referenced asset.
-        reference = asset.substring(i, asset.indexOf(')', i));
-        i += reference.length;
-        path = url.resolve(ref, reference.replace(/(\"|\')/g,''));
-
-        if (media[path] == null) {
-            return asset;
+        const path = url.resolve(ref, reference.replace(/(\"|\')/g,''));
+        if (media[path] != null) {
+            // Replace the reference with an encoded version of the resource.
+            const embeddedAsset = `'data:${media[path].type};base64,${(
+                media[path].encoding === 'base64' ?
+                media[path].data :
+                btoa(media[path].data)
+            )}'`;
+            asset = `${asset.substring(0, i)}${embeddedAsset}${asset.substring(i + reference.length)}`;
         }
-
-        // Replace the reference with an encoded version of the resource.
-        reference = `url('data:${media[path].type};base64,${(
-            media[path].encoding === 'base64' ?
-            media[path].data :
-            _btoa(unescape(encodeURIComponent(quote(media[path].data))))
-        )}')`;
-
-        k = i; i = j + reference.length;
-
-        // Replace the url with the base64 encoded string.
-        asset = `${asset.substring(0, j)}${reference}${asset.substring(k + 1)}`;
     }
     return asset;
 }
@@ -114,7 +74,7 @@ const mhtml2html = {
     /**
      * No Conflict
      *
-     * Description: Resets the module that was previously defined (if any) for conflict resolution.
+     * Description: Resets the module that was previously defined for browser conflict resolution.
      * @returns mhtml2html as a localized object.
      */
     noConflict: () => {
@@ -129,10 +89,10 @@ const mhtml2html = {
      *
      * Description: Returns an object representing the mhtml and its resources.
      * @param {mhtml} // The mhtml string.
-     * @param {html_only} // A flag to determine what parsed object to return.
+     * @param {html_only} // A flag to determine which parsed object to return.
      * @returns an html document without resources if html_only === true; an MHTML parsed object otherwise.
      */
-    parse: (mhtml, html_only = false) => {
+    parse: (mhtml, html_only) => {
         const MHTML_FSM = {
             MHTML_HEADERS : 0,
             MTHML_CONTENT : 1,
@@ -198,12 +158,12 @@ const mhtml2html = {
                     // Use a new line or null character to determine when we should
                     // stop processing headers.
                     if (next != 0 && next != '\n') {
-                        splitHeaders(next, headers);
+                        splitHeaders(next, headers, l);
                     } else {
                         boundary = headers['boundary'];
 
                         // Ensure the extracted boundary exists.
-                        assert(boundary !== undefined, `Missing boundary from document headers; Line ${l}`);
+                        assert(typeof boundary !== 'undefined', `Missing boundary from document headers; Line ${l}`);
                         boundary = boundary.replace(/\"/g,'');
 
                         trim();
@@ -224,7 +184,7 @@ const mhtml2html = {
                     // Use a new line or null character to determine when we should
                     // stop processing headers.
                     if (next != 0 && next != '\n') {
-                        splitHeaders(next, content);
+                        splitHeaders(next, content, l);
                     } else {
                         encoding = content['Content-Transfer-Encoding'];
                         type     = content['Content-Type'];
@@ -283,8 +243,8 @@ const mhtml2html = {
                     } catch (e) { e; }
 
                     // Ignore assets if 'html_only' is set.
-                    if (html_only === true && index !== undefined) {
-                        return _dom(asset.data);
+                    if (html_only === true && typeof index !== 'undefined') {
+                        return dom(asset.data);
                     }
 
                     // Set the finishing state if there are no more characters.
@@ -309,7 +269,10 @@ const mhtml2html = {
      * @returns an html document element.
      */
     convert: (mhtml) => {
+        let utf8String, b64String; // Encoded references.
         let index, media, frames;  // Record-keeping.
+        let style, base, img;      // DOM objects.
+        let href, src;             // References.
 
         if (typeof mhtml === "string") {
             mhtml = mhtml2html.parse(mhtml);
@@ -326,16 +289,12 @@ const mhtml2html = {
         assert(typeof index  === "string", 'MHTML error: invalid index' );
         assert(media[index] && media[index].type === "text/html", 'MHTML error: invalid index');
 
-        const documentElem = _dom(media[index].data);
+        const documentElem = dom(media[index].data);
         const nodes = [ documentElem ];
 
         // Merge resources into the document.
         while (nodes.length) {
             const childNode = nodes.shift();
-            let utf8String, b64String;
-            let base, img;
-            let href, src;
-            let style;
 
             // Resolve each node.
             childNode.childNodes.forEach(function(child) {
@@ -356,16 +315,18 @@ const mhtml2html = {
 
                     case 'LINK':
                         if (typeof media[href] !== 'undefined' && media[href].type === 'text/css') {
+                            // Embed the css into the document.
                             style = documentElem.createElement('style');
                             style.type = 'text/css';
                             media[href].data = replaceReferences(media, href, media[href].data);
-                            style.appendChild(documentElem.createTextNode(quote(media[href].data)));
+                            style.appendChild(documentElem.createTextNode(media[href].data));
                             childNode.replaceChild(style, child);
                         }
                         break;
 
                     case 'IMG':
                         if (typeof media[src] !== 'undefined' && media[src].type.includes('image')) {
+                            // Embed the image into the document.
                             switch(media[src].encoding) {
                                 case 'quoted-printable':
                                     utf8String = quotedPrintable.decode(media[src].data);
@@ -375,7 +336,7 @@ const mhtml2html = {
                                     img = `data:${media[src].type};base64,${media[src].data}`;
                                     break;
                                 default:
-                                    b64String = _btoa(unescape(encodeURIComponent(quote(media[src].data))));
+                                    b64String = btoa(media[src].data);
                                     img = `data:${media[src].type};base64,${b64String}`;
                                     break;
                             }
@@ -397,4 +358,5 @@ const mhtml2html = {
     }
 };
 
+loadDependencies();
 module.exports = mhtml2html;

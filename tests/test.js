@@ -9,6 +9,8 @@
  * Copyright(c) 2016 Mayank Sindwani
  **/
 
+'use strict';
+
 const mhtml2html = require('../src/mhtml2html');
 const chai       = require('chai');
 const fs         = require('fs');

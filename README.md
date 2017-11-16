@@ -4,6 +4,8 @@
 
 `mhtml2html` converts `MHTML` files to a single `HTML` file using javascript.
 
+[Usage](#usage) | [API](#api) | [Development](#development)
+
 ## Usage
 
 `mhtml2html` is compatible with Node >= v4.3.2.
@@ -13,12 +15,11 @@
 ### Node.js
 
 ``` js
-var mhtml2html = require('mhtml2html');
+const mhtml2html = require('mhtml2html');
 
 fs.readFile('input.mhtml', 'utf8', function (err, input) {
-    var parsedMhtml,
+    let parsedMhtml,
         htmlDocument;
-
 
     if (err) {
         throw err;
@@ -28,7 +29,7 @@ fs.readFile('input.mhtml', 'utf8', function (err, input) {
     htmlDocument = mhtml2html.convert(input);
 
     // Output the html file.
-    fs.writeFile('output.html', htmlDocument.documentElement.innerHTML, function(err) {
+    fs.writeFile('output.html', htmlDocument.documentElement.innerHTML, err => {
         if(err) {
             return console.log(err);
         }
@@ -42,35 +43,42 @@ You can also use it from the command line by running:
 
 ### Browser
 
-Include ```mhtml2html-min.js``` from the dist folder.
+Include the mhtml2html script under the dist folder:
 
-``` js
-var reader = new FileReader();
+``` html
+<script type="text/javascript" src="mhtml2html-min.js"></script>
+<script>
+    var reader = new FileReader();
 
-reader.addEventListener("loadend", function() {
-    html = mhtml2html.parse(this.result);
+    reader.addEventListener("loadend", function() {
+        html = mhtml2html.parse(this.result);
 
-    // Alternatively you could convert the result directly and have
-    // it implicity parsed i.e html = mhtml2html.convert(this.result);
+        // Alternatively you could convert the result directly and have
+        // it implicity parsed i.e html = mhtml2html.convert(this.result);
 
-    console.log(mhtml2html.convert(html));
-});
+        console.log(mhtml2html.convert(html));
+    });
 
-reader.readAsText(mhtmlBlob);
+    reader.readAsText(mhtmlBlob);
+</script>
 ```
 
 ## API
+
+### noConflict
 
 `mhtml2html.noConflict();`
 
 * Resets the module that was previously defined for browser conflict resolution
 * Returns a localized version of mhtml2html
 
+### parse
+
 `mhtml2html.parse(mhtml_string, html_only = false);`
 
 * Accepts an MHTML String.
-* If html_only === true, returns the html document without resources.
-* Else returns an MHTML parsed object:
+* If html_only is true, returns the html document without resources.
+Otherwise it returns an MHTML parsed object:
 
 ``` json
 {
@@ -86,11 +94,23 @@ reader.readAsText(mhtmlBlob);
 }
 ```
 
+### convert
+
 `mhtml2html.convert(mhtml_string or mhtml_object);`
 
 * Accepts an MHTML String or parsed MHTML Object.
 * Returns an html document element.
 
+## Development
+
+To build the mhtml2html distribution scripts
+
+1. If node_modules haven't been installed already, run `npm install` from the root directory
+2. Run `./node_modules/gulp/bin/gulp`. The distribution scripts are saved to the dist folder.
+
+### Testing and linting
+
+Run `./node_modules/gulp/bin/gulp lint` and `./node_modules/gulp/bin/gulp test` for linting and testing respectively.
 
 ## License
 
