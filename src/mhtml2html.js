@@ -10,6 +10,7 @@
  **/
 
 const quotedPrintable = require('quoted-printable');
+const url = require('url');
 
 // Runtime dependencies.
 let _mhtml2html, _btoa, _dom;
@@ -48,6 +49,7 @@ function assert(condition, error) {
     if (!condition) {
         throw new Error(error);
     }
+    return true;
 }
 
 // Escape unicode and return the ascii representation.
@@ -85,7 +87,7 @@ const mhtml2html = {
 
     // Returns an object representing the mhtml and its resources.
     parse: (mhtml, html_only = false) => {
-        let MHTML_FSM = {
+        const MHTML_FSM = {
             MHTML_HEADERS : 0,
             MTHML_CONTENT : 1,
             MHTML_DATA    : 2,
@@ -94,7 +96,7 @@ const mhtml2html = {
 
         let asset, headers, content, media, frames;  // Record-keeping.
         let location, encoding, type, id;            // Content properties.
-        let state, next, index, i, j, l;             // States.
+        let state, next, index, i, l;                // States.
         let boundary;                                // Boundaries.
 
         headers = { };
@@ -108,31 +110,20 @@ const mhtml2html = {
 
         // Discards characters until a non-whitespace character is encountered.
         function trim() {
-            for (;;) {
-                assert (i < mhtml.length - 1, 'Unexpected EOF');
-                if (!/\s/.test(mhtml[i])) { break; }
-                i++;
-                if (mhtml[i] == '\n') { l++; }
+            while (assert(i < mhtml.length - 1, 'Unexpected EOF') && /\s/.test(mhtml[i])) {
+                if (mhtml[++i] == '\n') { l++; }
             }
         }
 
         // Returns the next line from the index.
         function getLine(encoding) {
-            var line;
+            const j = i;
 
-            j = i;
+            // Wait until a newline character is encountered or when we exceed the str length.
+            while (mhtml[i] !== '\n' && assert(i++ < mhtml.length - 1, 'Unexpected EOF'));
+            i++; l++;
 
-            // Wait until a newline character is encountered or when we exceed
-            // the str length.
-            for (;;) {
-                if (mhtml[i] == '\n') {
-                    i++; l++;
-                    break;
-                }
-                assert (i++ < mhtml.length - 1, 'Unexpected EOF');
-            }
-
-            line = mhtml.substring(j, i);
+            const line = mhtml.substring(j, i);
 
             // Return the (decoded) line.
             switch(encoding) {
@@ -147,15 +138,13 @@ const mhtml2html = {
 
         // Splits headers from the first instance of ':' or '='.
         function splitHeaders(line, obj) {
-            var kv = line.split(/[:=](.+)?/);
-            assert (kv.length >= 2, `Invalid header; Line ${l}`);
+            const kv = line.split(/[:=](.+)?/);
+            assert(kv.length >= 2, `Invalid header; Line ${l}`);
             obj[kv[0].trim()] = kv[1].trim();
         }
 
         while (state != MHTML_FSM.MHTML_END) {
-
             switch(state) {
-
                 // Fetch document headers including the boundary to use.
                 case MHTML_FSM.MHTML_HEADERS: {
                     next = getLine();
@@ -288,64 +277,17 @@ const mhtml2html = {
         assert(typeof index  === typeof ' ', 'MHTML error: invalid index' );
         assert(media[index] && media[index].type === "text/html", 'MHTML error: invalid index');
 
-        // http://stackoverflow.com/questions/14780350/convert-relative-path-to-absolute-using-javascript
-        function resolve(base, relative) {
-            var splitUrl,
-                stack,
-                parts,
-                path;
-
-            // Ignore paths that start with http, https, or ftp protocols.
-            if (/^((http|https|ftp):\/\/)/.test(relative))
-                return relative;
-
-            if (relative[0] == '/') {
-                splitUrl = base.match(new RegExp("^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\\?([^#]*))?(#(.*))?"));
-
-                // Prefix the path with the base protocol and domain.
-                return `${splitUrl[2]}://${splitUrl[4]}${relative}`;
-            }
-
-            // Get the absolute path.
-            function getPath(pop) {
-                stack = base.split("/"),
-                parts = relative.split("/");
-
-                // TODO: Find a better way to determine whether or not we need
-                // to pop the last filename.
-                if (pop) {
-                    stack.pop();
-                }
-
-                for (var i=0; i<parts.length; i++) {
-                    if (parts[i] == "..") {
-                        stack.pop();
-                    } else if (parts[i] != ".") {
-                        stack.push(parts[i]);
-                    }
-                }
-                return stack.join("/");
-            }
-
-            path = getPath();
-            if (media[path] == null) {
-                return getPath(true);
-            }
-
-            return path;
-        }
-
         // Replace asset references with the corresponding data.
-        function replaceReference(url, asset) {
-            var path, k;
+        function replaceReference(ref, asset) {
+            let path, k;
 
             // Get the absolute path of the referenced asset.
             reference = asset.substring(i, asset.indexOf(')', i));
             i += reference.length;
-            path = resolve(url, reference.replace(/(\"|\')/g,''));
+            path = url.resolve(ref, reference.replace(/(\"|\')/g,''));
 
             if (media[path] == null) {
-                return null;
+                return asset;
             }
 
             // Replace the reference with an encoded version of the resource.
@@ -364,30 +306,24 @@ const mhtml2html = {
         // Merge resources into the document.
         function mergeResources(documentElem) {
             const CSS_URL_RULE = "url(";
-            let childNode, children;
             let nodes, base;
+            let childNode;
             let href, src;
             let style;
 
-            nodes = [documentElem];
+            nodes = [ documentElem ];
 
             while (nodes.length) {
-
-                childNode = nodes.shift();
-                children = new Array(Object.keys(childNode.childNodes).length);
-
-                for (i = 0; i < children.length; i++) {
-                    children[i] = childNode.childNodes[i];
-                }
-
                 // Resolve each node.
-                children.forEach(function(child) {
-
+                childNode = nodes.shift();
+                childNode.childNodes.forEach(function(child) {
                     if (child.getAttribute) {
                         href = child.getAttribute('href');
                         src  = child.getAttribute('src');
                     }
-
+                    if (child.removeAttribute) {
+                        child.removeAttribute('integrity');
+                    }
                     switch(child.tagName) {
                         case 'HEAD':
                              // Link targets should be directed to the outer frame.
@@ -407,10 +343,7 @@ const mhtml2html = {
                                     j = i; i += CSS_URL_RULE.length;
 
                                     // Try to resolve the reference.
-                                    reference = replaceReference(href, media[href].data);
-                                    if (reference != null) {
-                                        media[href].data = reference;
-                                    }
+                                    media[href].data = replaceReference(href, media[href].data);
                                 }
 
                                 style.appendChild(documentElem.createTextNode(quote(media[href].data)));
@@ -442,20 +375,12 @@ const mhtml2html = {
                                         j = i; i += CSS_URL_RULE.length;
 
                                         // Try to resolve the reference.
-                                        reference = replaceReference(index, child.style[style]);
-                                        if (reference != null) {
-                                            child.style[style] = reference;
-                                        }
+                                        child.style[style] = replaceReference(index, child.style[style]);
                                     }
                                 }
                             }
                             break;
                     }
-
-                    if (child.removeAttribute) {
-                        child.removeAttribute('integrity');
-                    }
-
                     nodes.push(child);
                 });
             }
