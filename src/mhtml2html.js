@@ -15,7 +15,7 @@ const url = require('url');
 // Runtime dependencies.
 let _mhtml2html, _btoa, _dom;
 (() => {
-    // localize existing namespace.
+    // Localize existing namespace.
     if (typeof window !== 'undefined') {
         _mhtml2html = window.mhtml2html;
     }
@@ -74,10 +74,49 @@ function quote(string) {
         }) : string;
 }
 
+// Replace asset references with the corresponding data.
+function replaceReferences(media, ref, asset) {
+    const CSS_URL_RULE = 'url(';
+    let reference, path, i, j, k;
+    i = j = 0;
+
+    while ((i = asset.indexOf(CSS_URL_RULE, i)) > 0) {
+        j = i;
+        i += CSS_URL_RULE.length;
+
+        // Get the absolute path of the referenced asset.
+        reference = asset.substring(i, asset.indexOf(')', i));
+        i += reference.length;
+        path = url.resolve(ref, reference.replace(/(\"|\')/g,''));
+
+        if (media[path] == null) {
+            return asset;
+        }
+
+        // Replace the reference with an encoded version of the resource.
+        reference = `url('data:${media[path].type};base64,${(
+            media[path].encoding === 'base64' ?
+            media[path].data :
+            _btoa(unescape(encodeURIComponent(quote(media[path].data))))
+        )}')`;
+
+        k = i; i = j + reference.length;
+
+        // Replace the url with the base64 encoded string.
+        asset = `${asset.substring(0, j)}${reference}${asset.substring(k + 1)}`;
+    }
+    return asset;
+}
+
 // Main module.
 const mhtml2html = {
 
-    // Resets the module that was previously defined (if any) for conflict resolution.
+    /**
+     * No Conflict
+     *
+     * Description: Resets the module that was previously defined (if any) for conflict resolution.
+     * @returns mhtml2html as a localized object.
+     */
     noConflict: () => {
         if (typeof window !== 'undefined') {
             window.mhtml2html = _mhtml2html;
@@ -85,7 +124,14 @@ const mhtml2html = {
         return mhtml2html;
     },
 
-    // Returns an object representing the mhtml and its resources.
+    /**
+     * Parse
+     *
+     * Description: Returns an object representing the mhtml and its resources.
+     * @param {mhtml} // The mhtml string.
+     * @param {html_only} // A flag to determine what parsed object to return.
+     * @returns an html document without resources if html_only === true; an MHTML parsed object otherwise.
+     */
     parse: (mhtml, html_only = false) => {
         const MHTML_FSM = {
             MHTML_HEADERS : 0,
@@ -255,141 +301,99 @@ const mhtml2html = {
         };
     },
 
-    // Accepts an mhtml string or parsed object and returns the converted html.
+    /**
+     * Convert
+     *
+     * Description: Accepts an mhtml string or parsed object and returns the converted html.
+     * @param {mhtml} // The mhtml string or object.
+     * @returns an html document element.
+     */
     convert: (mhtml) => {
-
         let index, media, frames;  // Record-keeping.
-        let reference;             // Resource ref.
-        let i, j;                  // States.
 
-        if (typeof mhtml === typeof '') {
+        if (typeof mhtml === "string") {
             mhtml = mhtml2html.parse(mhtml);
         } else {
-            assert(typeof mhtml === typeof { }, 'Expected argument of type string or object');
+            assert(typeof mhtml === "object", 'Expected argument of type string or object');
         }
 
         frames = mhtml.frames;
         media  = mhtml.media;
         index  = mhtml.index;
 
-        assert(typeof frames === typeof { }, 'MHTML error: invalid frames');
-        assert(typeof media  === typeof { }, 'MHTML error: invalid media' );
-        assert(typeof index  === typeof ' ', 'MHTML error: invalid index' );
+        assert(typeof frames === "object", 'MHTML error: invalid frames');
+        assert(typeof media  === "object", 'MHTML error: invalid media' );
+        assert(typeof index  === "string", 'MHTML error: invalid index' );
         assert(media[index] && media[index].type === "text/html", 'MHTML error: invalid index');
 
-        // Replace asset references with the corresponding data.
-        function replaceReference(ref, asset) {
-            let path, k;
-
-            // Get the absolute path of the referenced asset.
-            reference = asset.substring(i, asset.indexOf(')', i));
-            i += reference.length;
-            path = url.resolve(ref, reference.replace(/(\"|\')/g,''));
-
-            if (media[path] == null) {
-                return asset;
-            }
-
-            // Replace the reference with an encoded version of the resource.
-            reference = `url('data:${media[path].type};base64,${(
-                media[path].encoding === 'base64' ?
-                media[path].data :
-                _btoa(unescape(encodeURIComponent(quote(media[path].data))))
-            )}')`;
-
-            k = i; i = j + reference.length;
-
-            // Replace the url with the base64 encoded string.
-            return `${asset.substring(0, j)}${reference}${asset.substring(k + 1)}`;
-        }
+        const documentElem = _dom(media[index].data);
+        const nodes = [ documentElem ];
 
         // Merge resources into the document.
-        function mergeResources(documentElem) {
-            const CSS_URL_RULE = "url(";
-            let nodes, base;
-            let childNode;
+        while (nodes.length) {
+            const childNode = nodes.shift();
+            let utf8String, b64String;
+            let base, img;
             let href, src;
             let style;
 
-            nodes = [ documentElem ];
+            // Resolve each node.
+            childNode.childNodes.forEach(function(child) {
+                if (child.getAttribute) {
+                    href = child.getAttribute('href');
+                    src  = child.getAttribute('src');
+                }
+                if (child.removeAttribute) {
+                    child.removeAttribute('integrity');
+                }
+                switch(child.tagName) {
+                    case 'HEAD':
+                         // Link targets should be directed to the outer frame.
+                        base = documentElem.createElement("base");
+                        base.setAttribute("target", "_parent");
+                        child.insertBefore(base, child.firstChild);
+                        break;
 
-            while (nodes.length) {
-                // Resolve each node.
-                childNode = nodes.shift();
-                childNode.childNodes.forEach(function(child) {
-                    if (child.getAttribute) {
-                        href = child.getAttribute('href');
-                        src  = child.getAttribute('src');
-                    }
-                    if (child.removeAttribute) {
-                        child.removeAttribute('integrity');
-                    }
-                    switch(child.tagName) {
-                        case 'HEAD':
-                             // Link targets should be directed to the outer frame.
-                            base = documentElem.createElement("base");
-                            base.setAttribute("target", "_parent");
-                            child.insertBefore(base, child.firstChild);
-                            break;
+                    case 'LINK':
+                        if (typeof media[href] !== 'undefined' && media[href].type === 'text/css') {
+                            style = documentElem.createElement('style');
+                            style.type = 'text/css';
+                            media[href].data = replaceReferences(media, href, media[href].data);
+                            style.appendChild(documentElem.createTextNode(quote(media[href].data)));
+                            childNode.replaceChild(style, child);
+                        }
+                        break;
 
-                        case 'LINK':
-                            if (typeof media[href] !== 'undefined' && media[href].type === 'text/css') {
-                                style = documentElem.createElement('style');
-                                style.type = 'text/css';
-
-                                i = 0;
-                                // Find the next css rule with an external reference.
-                                while ((i = media[href].data.indexOf(CSS_URL_RULE, i)) > 0) {
-                                    j = i; i += CSS_URL_RULE.length;
-
-                                    // Try to resolve the reference.
-                                    media[href].data = replaceReference(href, media[href].data);
-                                }
-
-                                style.appendChild(documentElem.createTextNode(quote(media[href].data)));
-                                childNode.replaceChild(style, child);
+                    case 'IMG':
+                        if (typeof media[src] !== 'undefined' && media[src].type.includes('image')) {
+                            switch(media[src].encoding) {
+                                case 'quoted-printable':
+                                    utf8String = quotedPrintable.decode(media[src].data);
+                                    img = `data:${media[src].type};utf8,${utf8String}`;
+                                    break;
+                                case 'base64':
+                                    img = `data:${media[src].type};base64,${media[src].data}`;
+                                    break;
+                                default:
+                                    b64String = _btoa(unescape(encodeURIComponent(quote(media[src].data))));
+                                    img = `data:${media[src].type};base64,${b64String}`;
+                                    break;
                             }
-                            break;
+                            child.setAttribute('src', img);
+                        }
+                        child.style.cssText = replaceReferences(media, index, child.style.cssText);
+                        break;
 
-                        case 'IMG':
-                            if (typeof media[src] !== 'undefined' && media[src].type.includes('image')) {
-                                switch(media[src].encoding) {
-                                    case 'quoted-printable':
-                                        reference = `data:${media[src].type};utf8,${quotedPrintable.decode(media[src].data)}`;
-                                        break;
-                                    case 'base64':
-                                        reference = `data:${media[src].type};base64,${media[src].data}`;
-                                        break;
-                                    default:
-                                        reference = `data:${media[src].type};base64,${_btoa(unescape(encodeURIComponent(quote(media[src].data))))}`;
-                                        break;
-                                }
-                                child.setAttribute('src', reference);
-                            }
-
-                        default:
-                            for (style in child.style) {
-                                if (typeof child.style[style] === 'string') {
-                                    // Find the next css rule with an external reference.
-                                    while ((i = child.style[style].indexOf(CSS_URL_RULE, i)) > 0) {
-                                        j = i; i += CSS_URL_RULE.length;
-
-                                        // Try to resolve the reference.
-                                        child.style[style] = replaceReference(index, child.style[style]);
-                                    }
-                                }
-                            }
-                            break;
-                    }
-                    nodes.push(child);
-                });
-            }
-
-            return documentElem;
+                    default:
+                        if (child.style) {
+                            child.style.cssText = replaceReferences(media, index, child.style.cssText);
+                        }
+                        break;
+                }
+                nodes.push(child);
+            });
         }
-
-        // Return the parsed HTML with resources
-        return mergeResources(_dom(media[index].data));
+        return documentElem;
     }
 };
 
