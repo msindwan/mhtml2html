@@ -15,18 +15,17 @@
 ### Node.js
 
 ``` js
+'use strict';
+
 const mhtml2html = require('mhtml2html');
 
 fs.readFile('input.mhtml', 'utf8', function (err, input) {
-    let parsedMhtml,
-        htmlDocument;
-
     if (err) {
         throw err;
     }
 
     // Returns the html document with embedded resources.
-    htmlDocument = mhtml2html.convert(input);
+    const htmlDocument = mhtml2html.convert(input);
 
     // Output the html file.
     fs.writeFile('output.html', htmlDocument.documentElement.innerHTML, err => {
