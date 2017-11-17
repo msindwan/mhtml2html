@@ -71,8 +71,8 @@ gulp.task('test', 'Runs tests for mhtml2html', ['build'], (cb) => {
                 .src(['tests/**/*.js'], { read: false })
                 .pipe(mocha({
                     useColors: true
-                }));
-            cb();
+                }))
+                .on('end', cb);
         }
     }).start();
 });
