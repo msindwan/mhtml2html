@@ -1,3 +1,5 @@
+const pkg = require('./package.json');
+
 module.exports = function(config) {
     config.set({
         frameworks: ['mocha', 'chai'],
@@ -8,7 +10,7 @@ module.exports = function(config) {
         ],
         files: [
             'tests/test.js',
-            'dist/mhtml2html.js',
+            'dist/mhtml2html-' + pkg['version'] + '.js',
             {
                 pattern: 'tests/templates/**/*.mhtml',
                 included: false,

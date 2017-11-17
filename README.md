@@ -45,7 +45,7 @@ You can also use it from the command line by running:
 Include the mhtml2html script under the dist folder:
 
 ``` html
-<script type="text/javascript" src="mhtml2html-min.js"></script>
+<script type="text/javascript" src="mhtml2html-${VERSION}-min.js"></script>
 <script>
     var reader = new FileReader();
 
