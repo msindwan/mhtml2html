@@ -20,6 +20,7 @@ const help       = require('gulp-help');
 const karma      = require('karma');
 const tasks      = require('gulp');
 const del        = require('del');
+const proc       = require('child_process').exec;
 
 const gulp = help(tasks);
 
@@ -74,6 +75,15 @@ gulp.task('test', 'Runs tests for mhtml2html', ['build'], (cb) => {
             cb();
         }
     }).start();
+});
+
+gulp.task('pre-publish', 'Prepares for a new version to be published', ['test'], () => {
+    return proc('git tag v' + pkg['version'] + ' && git push --tags', (err, stdout, stderr) => {
+        if (err) {
+            return;
+        }
+        console.log(stdout);
+    });
 });
 
 gulp.task('default', 'Runs the default build process', ['test']);

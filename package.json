@@ -10,6 +10,9 @@
   "bin": {
     "mhtml2html": "./index.js"
   },
+  "scripts": {
+    "prepublishOnly": "./node_modules/gulp/bin/gulp.js pre-publish"
+  },
   "engines": {
     "node": ">=4.3.2"
   },
