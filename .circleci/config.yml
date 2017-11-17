@@ -34,5 +34,4 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       # run tests!
-      - run: ./node_modules/gulp/bin/gulp.js test
-      - run: ./node_modules/gulp/bin/gulp.js lint
+      - run: ./node_modules/gulp/bin/gulp.js

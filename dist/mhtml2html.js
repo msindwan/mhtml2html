@@ -1643,13 +1643,11 @@ var quotedPrintable = require('quoted-printable');
 var url = require('url');
 
 var _mhtml2html = void 0,
-    btoa = void 0,
+    b64toa = void 0,
     dom = void 0;
 
 // Loads runtime dependencies.
 function loadDependencies() {
-    var _arguments = arguments;
-
     // Localize any existing module named mhtml2html.
     if (typeof window !== 'undefined') {
         _mhtml2html = window.mhtml2html;
@@ -1658,16 +1656,16 @@ function loadDependencies() {
     // Avoid preprocessors from bundling runtime dependencies.
     var _require = typeof require !== 'undefined' ? require : null;
 
-    btoa = typeof btoa === 'undefined' ? _require('btoa') : btoa;
+    b64toa = typeof btoa === 'undefined' ? _require('btoa') : btoa;
     if (typeof DOMParser === 'undefined') {
         var parser = _require('jsdom').jsdom;
-        dom = function dom() {
-            return parser(_arguments, {});
+        dom = function dom(asset) {
+            return parser(asset, {});
         };
     } else {
-        var _parser = new DOMParser().parseFromString;
-        dom = function dom() {
-            return _parser(_arguments, "text/html");
+        var _parser = new DOMParser();
+        dom = function dom(asset) {
+            return _parser.parseFromString(asset, "text/html");
         };
     }
 }
@@ -1694,7 +1692,7 @@ function replaceReferences(media, ref, asset) {
         var path = url.resolve(ref, reference.replace(/(\"|\')/g, ''));
         if (media[path] != null) {
             // Replace the reference with an encoded version of the resource.
-            var embeddedAsset = '\'data:' + media[path].type + ';base64,' + (media[path].encoding === 'base64' ? media[path].data : btoa(media[path].data)) + '\'';
+            var embeddedAsset = '\'data:' + media[path].type + ';base64,' + (media[path].encoding === 'base64' ? media[path].data : b64toa(media[path].data)) + '\'';
             asset = '' + asset.substring(0, i) + embeddedAsset + asset.substring(i + reference.length);
         }
     }
@@ -1994,7 +1992,7 @@ var mhtml2html = {
                                     img = 'data:' + media[src].type + ';base64,' + media[src].data;
                                     break;
                                 default:
-                                    b64String = btoa(media[src].data);
+                                    b64String = b64toa(media[src].data);
                                     img = 'data:' + media[src].type + ';base64,' + b64String;
                                     break;
                             }

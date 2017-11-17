@@ -14,7 +14,7 @@
 const quotedPrintable = require('quoted-printable');
 const url = require('url');
 
-let _mhtml2html, btoa, dom;
+let _mhtml2html, b64toa, dom;
 
 // Loads runtime dependencies.
 function loadDependencies() {
@@ -26,13 +26,17 @@ function loadDependencies() {
     // Avoid preprocessors from bundling runtime dependencies.
     const _require = typeof require !== 'undefined' ? require : null;
 
-    btoa = typeof btoa === 'undefined' ? _require('btoa') : btoa;
+    b64toa = typeof btoa === 'undefined' ? _require('btoa') : btoa;
     if (typeof DOMParser === 'undefined') {
         const parser = _require('jsdom').jsdom;
-        dom = () => { return parser(arguments, {}); };
+        dom = (asset) => {
+            return parser(asset, {});
+        };
     } else {
-        const parser = new DOMParser().parseFromString;
-        dom = () => { return parser(arguments, "text/html"); };
+        const parser = new DOMParser();
+        dom = (asset) => {
+            return parser.parseFromString(asset, "text/html");
+        };
     }
 }
 
@@ -60,7 +64,7 @@ function replaceReferences(media, ref, asset) {
             const embeddedAsset = `'data:${media[path].type};base64,${(
                 media[path].encoding === 'base64' ?
                 media[path].data :
-                btoa(media[path].data)
+                b64toa(media[path].data)
             )}'`;
             asset = `${asset.substring(0, i)}${embeddedAsset}${asset.substring(i + reference.length)}`;
         }
@@ -336,7 +340,7 @@ const mhtml2html = {
                                     img = `data:${media[src].type};base64,${media[src].data}`;
                                     break;
                                 default:
-                                    b64String = btoa(media[src].data);
+                                    b64String = b64toa(media[src].data);
                                     img = `data:${media[src].type};base64,${b64String}`;
                                     break;
                             }

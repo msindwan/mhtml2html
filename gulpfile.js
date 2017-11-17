@@ -21,7 +21,7 @@ const del        = require('del');
 
 const gulp = help(tasks);
 
-gulp.task('build', 'Creates the distribution scripts', () => {
+gulp.task('build', 'Creates the distribution scripts', ['test', 'lint'], () => {
     // Transpile es6 to es5 and output debug + production scripts.
     return browserify({
             entries: 'src/mhtml2html.js',
