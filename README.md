@@ -104,7 +104,7 @@ Otherwise it returns an MHTML parsed object:
 
 To build and test mhtml2html:
 
-1. If node_modules haven't been installed already, run `npm install` from the root directory
+1. If node_modules haven't been installed already, run `npm install` from the root directory.
 2. Run `./node_modules/gulp/bin/gulp` to build the scripts and run tests.
 
 ## License

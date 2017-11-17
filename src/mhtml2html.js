@@ -49,7 +49,7 @@ function assert(condition, error) {
 }
 
 // Replace asset references with the corresponding data.
-function replaceReferences(media, ref, asset) {
+function replaceReferences(media, base, asset) {
     const CSS_URL_RULE = 'url(';
     let reference, i;
 
@@ -58,7 +58,7 @@ function replaceReferences(media, ref, asset) {
         reference = asset.substring(i, asset.indexOf(')', i));
 
         // Get the absolute path of the referenced asset.
-        const path = url.resolve(ref, reference.replace(/(\"|\')/g,''));
+        const path = url.resolve(base, reference.replace(/(\"|\')/g,''));
         if (media[path] != null) {
             // Replace the reference with an encoded version of the resource.
             const embeddedAsset = `'data:${media[path].type};base64,${(
@@ -106,7 +106,7 @@ const mhtml2html = {
 
         let asset, headers, content, media, frames;  // Record-keeping.
         let location, encoding, type, id;            // Content properties.
-        let state, next, index, i, l;                // States.
+        let state, key, next, index, i, l;           // States.
         let boundary;                                // Boundaries.
 
         headers = { };
@@ -146,11 +146,16 @@ const mhtml2html = {
             }
         }
 
-        // Splits headers from the first instance of ':' or '='.
+        // Splits headers from the first instance of ':'.
         function splitHeaders(line, obj) {
-            const kv = line.split(/[:=](.+)?/);
-            assert(kv.length >= 2, `Invalid header; Line ${l}`);
-            obj[kv[0].trim()] = kv[1].trim();
+            let m;
+            if ((m = line.indexOf(':')) > -1) {
+                key = line.substring(0, m).trim();
+                obj[key] = line.substring(m + 1, line.length).trim();
+            } else {
+                assert(typeof key !== 'undefined', `Missing MHTML headers; Line ${l}`);
+                obj[key] += line.trim();
+            }
         }
 
         while (state != MHTML_FSM.MHTML_END) {
@@ -158,17 +163,17 @@ const mhtml2html = {
                 // Fetch document headers including the boundary to use.
                 case MHTML_FSM.MHTML_HEADERS: {
                     next = getLine();
-
                     // Use a new line or null character to determine when we should
                     // stop processing headers.
                     if (next != 0 && next != '\n') {
-                        splitHeaders(next, headers, l);
+                        splitHeaders(next, headers);
                     } else {
-                        boundary = headers['boundary'];
+                        assert(typeof headers['Content-Type'] !== 'undefined', `Missing document content type; Line ${l}`);
+                        const matches = headers['Content-Type'].match(/boundary=(.*)/m);
 
                         // Ensure the extracted boundary exists.
-                        assert(typeof boundary !== 'undefined', `Missing boundary from document headers; Line ${l}`);
-                        boundary = boundary.replace(/\"/g,'');
+                        assert(matches != null, `Missing boundary from document headers; Line ${l}`);
+                        boundary = matches[1].replace(/\"/g,'');
 
                         trim();
                         next = getLine();
@@ -188,7 +193,7 @@ const mhtml2html = {
                     // Use a new line or null character to determine when we should
                     // stop processing headers.
                     if (next != 0 && next != '\n') {
-                        splitHeaders(next, content, l);
+                        splitHeaders(next, content);
                     } else {
                         encoding = content['Content-Transfer-Encoding'];
                         type     = content['Content-Type'];
@@ -196,15 +201,16 @@ const mhtml2html = {
                         location = content['Content-Location'];
 
                         // Assume the first boundary to be the document.
-                        if (index === undefined) {
+                        if (typeof index === 'undefined') {
                             index = location;
-                            assert(index !== undefined && type === "text/html", `Index not found; Line ${l}`);
+                            assert(typeof index !== 'undefined' && type === "text/html", `Index not found; Line ${l}`);
                         }
 
                         // Ensure the extracted information exists.
-                        assert(id       !== undefined || location !== undefined, `ID or location header not provided;  Line ${l}`);
-                        assert(encoding !== undefined, `Content-Transfer-Encoding not provided;  Line ${l}`);
-                        assert(type     !== undefined, `Content-Type not provided; Line ${l}`);
+                        assert(typeof id !== 'undefined' || typeof location !== 'undefined',
+                            `ID or location header not provided;  Line ${l}`);
+                        assert(typeof encoding !== 'undefined', `Content-Transfer-Encoding not provided;  Line ${l}`);
+                        assert(typeof type     !== 'undefined', `Content-Type not provided; Line ${l}`);
 
                         asset = {
                             encoding : encoding,
@@ -214,12 +220,12 @@ const mhtml2html = {
                         };
 
                         // Keep track of frames by ID.
-                        if (id !== undefined) {
+                        if (typeof id !== 'undefined') {
                             frames[id] = asset;
                         }
 
                         // Associate the first frame with the location.
-                        if (location !== undefined && media[location] === undefined) {
+                        if (typeof location !== 'undefined' && typeof media[location] === 'undefined') {
                             media[location] = asset;
                         }
 
@@ -326,6 +332,13 @@ const mhtml2html = {
                             style.appendChild(documentElem.createTextNode(media[href].data));
                             childNode.replaceChild(style, child);
                         }
+                        break;
+
+                    case 'STYLE':
+                        style = documentElem.createElement('style');
+                        style.type = 'text/css';
+                        style.appendChild(documentElem.createTextNode(replaceReferences(media, index, child.innerHTML)));
+                        childNode.replaceChild(style, child);
                         break;
 
                     case 'IMG':
