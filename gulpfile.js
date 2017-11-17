@@ -16,12 +16,26 @@ const eslint     = require('gulp-eslint');
 const min        = require('gulp-minify');
 const mocha      = require('gulp-mocha');
 const help       = require('gulp-help');
+const karma      = require('karma');
 const tasks      = require('gulp');
 const del        = require('del');
 
 const gulp = help(tasks);
 
-gulp.task('build', 'Creates the distribution scripts', ['test', 'lint'], () => {
+gulp.task('clean', 'Removes the distribution folder', (cb) => {
+    // Delete the distribution folder.
+    del('dist', cb);
+});
+
+gulp.task('lint', 'Lints the scripts', () => {
+    // Lint the src script.
+    return gulp.src(['src/mhtml2html.js'])
+        .pipe(eslint())
+        .pipe(eslint.format())
+        .pipe(eslint.failAfterError());
+});
+
+gulp.task('build', 'Creates the distribution scripts', ['lint'], () => {
     // Transpile es6 to es5 and output debug + production scripts.
     return browserify({
             entries: 'src/mhtml2html.js',
@@ -40,26 +54,25 @@ gulp.task('build', 'Creates the distribution scripts', ['test', 'lint'], () => {
         .pipe(gulp.dest('dist'));
 });
 
-gulp.task('clean', 'Removes the distribution folder', (cb) => {
-    // Delete the distribution folder.
-    del('dist', cb);
+gulp.task('test', 'Runs tests for mhtml2html', ['build'], (cb) => {
+    // Test in a browser context.
+    new karma.Server({
+        configFile: __dirname + '/karma.config.js',
+        singleRun: true,
+        browsers: ['Chrome']
+    }, code => {
+        if (code != 0) {
+            process.exit(code);
+        } else {
+            // Test using Node.js.
+            gulp
+                .src(['tests/**/*.js'], { read: false })
+                .pipe(mocha({
+                    useColors: true
+                }));
+            cb();
+        }
+    }).start();
 });
 
-gulp.task('lint', 'Lints the scripts', () => {
-    // Lint the src script.
-    return gulp.src(['src/mhtml2html.js'])
-        .pipe(eslint())
-        .pipe(eslint.format())
-        .pipe(eslint.failAfterError());
-});
-
-gulp.task('test', 'Runs tests for mhtml2html', () => {
-    // Run mocha tests.
-    return gulp
-        .src(['tests/**/*.js'], { read: false })
-        .pipe(mocha({
-            useColors: true
-        }));
-});
-
-gulp.task('default', 'Runs the default build process', ['build']);
+gulp.task('default', 'Runs the default build process', ['test']);

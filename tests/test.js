@@ -11,17 +11,43 @@
 
 'use strict';
 
-const mhtml2html = require('../src/mhtml2html');
-const chai       = require('chai');
-const fs         = require('fs');
+var mhtml2html;
+var readMHTML;
+var chai;
+var fs;
 
-function readMHTML(file, callback) {
-    fs.readFile(`tests/templates/${file}`, 'utf8', function (err, data) {
-        if (err) {
-            throw err;
-        }
-        callback(data);
-    });
+if (typeof module !== 'undefined' && module.exports) {
+    // Node.js dependencies.
+    mhtml2html = require('../src/mhtml2html');
+    chai = require('chai');
+    fs = require('fs');
+
+    readMHTML = function(file, callback) {
+        fs.readFile(`tests/templates/${file}`, 'utf8', function (err, data) {
+            if (err) {
+                throw err;
+            }
+            callback(data);
+        });
+    }
+} else {
+    // Browser dependencies.
+    mhtml2html = window.mhtml2html;
+    chai = window.chai;
+
+    readMHTML = function readMHTML(file, callback) {
+        // Fetch from the running web server.
+        fetch('/templates/' + file).then(function(response) {
+            return response.blob();
+        }).then(function(mhtmlBlob) {
+            // Read the mhtml template as a string.
+            var reader = new FileReader();
+            reader.addEventListener("loadend", function() {
+                callback(this.result);
+            });
+            reader.readAsText(mhtmlBlob);
+        });
+    }
 }
 
 describe('Test parsing MHTML', function () {
@@ -92,7 +118,7 @@ describe('Test converting MHTML to HTML', function () {
             let doc;
 
             doc = mhtml2html.convert(data);
-            chai.expect(doc).to.be.a('object');
+            chai.expect(typeof doc).to.equal('object');
             chai.expect(doc).to.have.property('documentElement');
             done();
         });

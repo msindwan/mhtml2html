@@ -68,8 +68,8 @@ Include the mhtml2html script under the dist folder:
 
 `mhtml2html.noConflict();`
 
-* Resets the module that was previously defined for browser conflict resolution
-* Returns a localized version of mhtml2html
+* Resets the module that was previously defined for browser conflict resolution.
+* Returns a localized version of mhtml2html.
 
 ### parse
 
@@ -102,14 +102,10 @@ Otherwise it returns an MHTML parsed object:
 
 ## Development
 
-To build the mhtml2html distribution scripts
+To build and test mhtml2html:
 
 1. If node_modules haven't been installed already, run `npm install` from the root directory
-2. Run `./node_modules/gulp/bin/gulp`. The distribution scripts are saved to the dist folder.
-
-### Testing and linting
-
-Run `./node_modules/gulp/bin/gulp lint` and `./node_modules/gulp/bin/gulp test` for linting and testing respectively.
+2. Run `./node_modules/gulp/bin/gulp` to build the scripts and run tests.
 
 ## License
 
