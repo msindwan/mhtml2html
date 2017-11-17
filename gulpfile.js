@@ -26,7 +26,7 @@ const gulp = help(tasks);
 
 gulp.task('clean', 'Removes the distribution folder', (cb) => {
     // Delete the distribution folder.
-    del('dist', cb);
+    return del('dist', cb);
 });
 
 gulp.task('lint', 'Lints the scripts', () => {
@@ -37,7 +37,7 @@ gulp.task('lint', 'Lints the scripts', () => {
         .pipe(eslint.failAfterError());
 });
 
-gulp.task('build', 'Creates the distribution scripts', ['lint'], () => {
+gulp.task('build', 'Creates the distribution scripts', ['lint', 'clean'], () => {
     // Transpile es6 to es5 and output debug + production scripts.
     return browserify({
             entries: 'src/mhtml2html.js',
@@ -77,20 +77,20 @@ gulp.task('test', 'Runs tests for mhtml2html', ['build'], (cb) => {
     }).start();
 });
 
-gulp.task('pre-publish', 'Prepares for a new version to be published', ['test'], () => {
+gulp.task('pre-publish', 'Prepares for a new version to be published', ['test'], cb => {
     const version = pkg['version'];
 
     return proc('git add . && git commit -m "Bundle v' + version + '"', (err, stdout, stderr) => {
         if (err) {
-            throw err;
+            cb(err);
         }
-        return proc('git tag v' + version + ' && git push --tags', (err, stdout, stderr) => {
+        return proc('git tag v' + version + ' && git push && git push --tags', (err, stdout, stderr) => {
             if (err) {
-                throw err;
+                proc('git reset HEAD^', () => {
+                    cb(err);
+                });
             }
-            console.log(stdout);
         });
-        console.log(stdout);
     });
 });
 
