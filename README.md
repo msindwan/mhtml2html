@@ -53,7 +53,7 @@ Include the mhtml2html script under the dist folder:
         html = mhtml2html.parse(this.result);
 
         // Alternatively you could convert the result directly and have
-        // it implicity parsed i.e html = mhtml2html.convert(this.result);
+        // it implicitly parsed i.e html = mhtml2html.convert(this.result);
 
         console.log(mhtml2html.convert(html));
     });
