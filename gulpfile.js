@@ -77,21 +77,4 @@ gulp.task('test', 'Runs tests for mhtml2html', ['build'], (cb) => {
     }).start();
 });
 
-gulp.task('pre-publish', 'Prepares for a new version to be published', ['test'], cb => {
-    const version = pkg['version'];
-
-    return proc('git add . && git commit -m "Bundle v' + version + '"', (err, stdout, stderr) => {
-        if (err) {
-            cb(err);
-        }
-        return proc('git tag v' + version + ' && git push && git push --tags', (err, stdout, stderr) => {
-            if (err) {
-                proc('git reset HEAD^', () => {
-                    cb(err);
-                });
-            }
-        });
-    });
-});
-
 gulp.task('default', 'Runs the default build process', ['test']);
