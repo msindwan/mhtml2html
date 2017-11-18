@@ -12,9 +12,10 @@
 'use strict';
 
 const quotedPrintable = require('quoted-printable');
+const b64toa = require('btoa');
 const url = require('url');
 
-let _mhtml2html, b64toa, dom;
+let _mhtml2html, dom;
 
 // Loads runtime dependencies.
 function loadDependencies() {
@@ -26,7 +27,6 @@ function loadDependencies() {
     // Avoid preprocessors from bundling runtime dependencies.
     const _require = typeof require !== 'undefined' ? require : null;
 
-    b64toa = typeof btoa === 'undefined' ? _require('btoa') : btoa;
     if (typeof DOMParser === 'undefined') {
         const parser = _require('jsdom').jsdom;
         dom = (asset) => {
@@ -61,12 +61,16 @@ function replaceReferences(media, base, asset) {
         const path = url.resolve(base, reference.replace(/(\"|\')/g,''));
         if (media[path] != null) {
             // Replace the reference with an encoded version of the resource.
-            const embeddedAsset = `'data:${media[path].type};base64,${(
-                media[path].encoding === 'base64' ?
-                media[path].data :
-                b64toa(media[path].data)
-            )}'`;
-            asset = `${asset.substring(0, i)}${embeddedAsset}${asset.substring(i + reference.length)}`;
+            try {
+                const embeddedAsset = `'data:${media[path].type};base64,${(
+                    media[path].encoding === 'base64' ?
+                    media[path].data :
+                    b64toa(media[path].data)
+                )}'`;
+                asset = `${asset.substring(0, i)}${embeddedAsset}${asset.substring(i + reference.length)}`;
+            } catch(e) {
+                console.warn(e);
+            }
         }
     }
     return asset;
@@ -342,6 +346,7 @@ const mhtml2html = {
                         break;
 
                     case 'IMG':
+                        img = null;
                         if (typeof media[src] !== 'undefined' && media[src].type.includes('image')) {
                             // Embed the image into the document.
                             switch(media[src].encoding) {
@@ -353,11 +358,17 @@ const mhtml2html = {
                                     img = `data:${media[src].type};base64,${media[src].data}`;
                                     break;
                                 default:
-                                    b64String = b64toa(media[src].data);
-                                    img = `data:${media[src].type};base64,${b64String}`;
+                                    try {
+                                        b64String = b64toa(media[src].data);
+                                        img = `data:${media[src].type};base64,${b64String}`;
+                                    } catch(e) {
+                                        console.warn(e);
+                                    }
                                     break;
                             }
-                            child.setAttribute('src', img);
+                            if (img !== null) {
+                                child.setAttribute('src', img);
+                            }
                         }
                         child.style.cssText = replaceReferences(media, index, child.style.cssText);
                         break;

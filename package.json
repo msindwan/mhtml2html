@@ -11,7 +11,7 @@
     "mhtml2html": "./index.js"
   },
   "scripts": {
-    "prepublishOnly": "./node_modules/gulp/bin/gulp.js pre-publish"
+    "prepublishOnly": "./node_modules/gulp/bin/gulp.js"
   },
   "engines": {
     "node": ">=4.3.2"
