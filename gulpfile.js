@@ -10,7 +10,6 @@
  **/
 
 const browserify = require('browserify');
-const pkg        = require('./package.json');
 const source     = require('vinyl-source-stream');
 const buffer     = require('vinyl-buffer');
 const eslint     = require('gulp-eslint');
@@ -20,7 +19,6 @@ const help       = require('gulp-help');
 const karma      = require('karma');
 const tasks      = require('gulp');
 const del        = require('del');
-const proc       = require('child_process').exec;
 
 const gulp = help(tasks);
 
@@ -49,7 +47,7 @@ gulp.task('build', 'Creates the distribution scripts', ['lint', 'clean'], () => 
             console.log(err.toString());
             this.emit('end');
         })
-        .pipe(source('mhtml2html-' + pkg['version'] + '.js'))
+        .pipe(source('mhtml2html.js'))
         .pipe(buffer())
         .pipe(gulp.dest('dist'))
         .pipe(min())

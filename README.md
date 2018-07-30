@@ -12,54 +12,29 @@
 
 **It has only been tested with MHTML files built and used with the latest versions of Chrome**
 
-### Node.js
+To get started, import mhtml2html:
 
-``` js
-'use strict';
-
-const mhtml2html = require('mhtml2html');
-
-fs.readFile('input.mhtml', 'utf8', function (err, input) {
-    if (err) {
-        throw err;
-    }
-
-    // Returns the html document with embedded resources.
-    const htmlDocument = mhtml2html.convert(input);
-
-    // Output the html file.
-    fs.writeFile('output.html', htmlDocument.documentElement.innerHTML, err => {
-        if(err) {
-            return console.log(err);
-        }
-    });
-});
+```js
+import mhtml2html from 'mhtml2html';
 ```
 
-You can also use it from the command line by running:
+Or include it as a script in your webpage:
 
-`mhtml2html <path_to_mhtml_file> <output_file_path>`
+```html
+<script src="https://unpkg.com/mhtml2html@<VERSION>" type="javascript" />
+```
 
-### Browser
+### Example
 
-Include the mhtml2html script under the dist folder:
+```js
+const mhtml = '<your MHTML string>';
+const mhtmlParsed = mhtml2html.parse(mhtml);
+const html = mhtml2html.convert(mhtmlParsed);
+console.log(html);
 
-``` html
-<script type="text/javascript" src="mhtml2html-${VERSION}-min.js"></script>
-<script>
-    var reader = new FileReader();
-
-    reader.addEventListener("loadend", function() {
-        html = mhtml2html.parse(this.result);
-
-        // Alternatively you could convert the result directly and have
-        // it implicitly parsed i.e html = mhtml2html.convert(this.result);
-
-        console.log(mhtml2html.convert(html));
-    });
-
-    reader.readAsText(mhtmlBlob);
-</script>
+// Alternatively you could convert the result directly and have
+// it implicitly parsed i.e:
+// const html = mhtml2html.convert(mhtml);
 ```
 
 ## API
@@ -102,10 +77,15 @@ Otherwise it returns an MHTML parsed object:
 
 ## Development
 
+### Requirements
+
+* Node.js >= v4.3.2
+* Yarn
+
 To build and test mhtml2html:
 
-1. If node_modules haven't been installed already, run `npm install` from the root directory.
-2. Run `./node_modules/gulp/bin/gulp.js` to build the scripts and run tests.
+1. If node_modules haven't been installed already, run `yarn install` from the root directory.
+2. Run `yarn run test` to build the scripts and run tests.
 
 ## License
 

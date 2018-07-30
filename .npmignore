@@ -4,3 +4,4 @@ tests
 .circleci/
 karma.config.js
 gulpfile.js
+src

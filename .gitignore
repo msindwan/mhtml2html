@@ -3,3 +3,6 @@ node_modules
 
 # MHTML
 /*.mhtml
+
+# Build
+dist

@@ -15,7 +15,7 @@
       "react/prop-types": 0,
       "no-control-regex": 0,
       "no-fallthrough": 0,
-      max-len: ["error", 131]
+      "max-len": ["error", 131]
    },
    "extends": ["eslint:recommended"]
 }
