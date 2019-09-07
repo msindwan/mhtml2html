@@ -12,7 +12,7 @@
  **/
 
 const serializeDocument = require("jsdom").serializeDocument;
-const mhtml2html        = require('./src/mhtml2html');
+const mhtml2html        = require('./dist/mhtml2html');
 const fs                = require('fs');
 
 // Ensure that an input and output path is provided.
