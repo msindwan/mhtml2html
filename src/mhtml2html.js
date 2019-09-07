@@ -25,7 +25,8 @@ function loadDependencies() {
     }
 
     if (typeof DOMParser === 'undefined') {
-        const parser = require('jsdom').jsdom;
+        // eslint-disable-next-line
+        const parser = __non_webpack_require__('jsdom').jsdom;
         dom = (asset) => {
             return parser(asset, {});
         };

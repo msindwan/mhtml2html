@@ -28,7 +28,9 @@ module.exports = {
     },
     output: {
         path: path.join(__dirname, 'dist'),
+        globalObject: 'typeof self !== \'undefined\' ? self : this',
         filename: 'mhtml2html.js',
-        library: 'mhtml2html'
+        library: 'mhtml2html',
+        libraryTarget: 'umd'
     }
 };
