@@ -1,7 +1,0 @@
-tests
-.eslintrc
-.gitignore
-.circleci/
-karma.config.js
-gulpfile.js
-src

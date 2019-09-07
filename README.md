@@ -79,13 +79,13 @@ Otherwise it returns an MHTML parsed object:
 
 ### Requirements
 
-* Node.js >= v4.3.2
+* Node.js >= 10
 * Yarn
 
 To build and test mhtml2html:
 
 1. If node_modules haven't been installed already, run `yarn install` from the root directory.
-2. Run `yarn run test` to build the scripts and run tests.
+2. Run `yarn test` to build and test the source code.
 
 ## License
 

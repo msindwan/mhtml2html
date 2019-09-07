@@ -24,11 +24,8 @@ function loadDependencies() {
         _mhtml2html = window.mhtml2html;
     }
 
-    // Avoid preprocessors from bundling runtime dependencies.
-    const _require = typeof require !== 'undefined' ? require : null;
-
     if (typeof DOMParser === 'undefined') {
-        const parser = _require('jsdom').jsdom;
+        const parser = require('jsdom').jsdom;
         dom = (asset) => {
             return parser(asset, {});
         };
@@ -64,8 +61,8 @@ function replaceReferences(media, base, asset) {
             try {
                 const embeddedAsset = `'data:${media[path].type};base64,${(
                     media[path].encoding === 'base64' ?
-                    media[path].data :
-                    b64toa(media[path].data)
+                        media[path].data :
+                        b64toa(media[path].data)
                 )}'`;
                 asset = `${asset.substring(0, i)}${embeddedAsset}${asset.substring(i + reference.length)}`;
             } catch(e) {
@@ -321,7 +318,7 @@ const mhtml2html = {
                 }
                 switch(child.tagName) {
                     case 'HEAD':
-                         // Link targets should be directed to the outer frame.
+                        // Link targets should be directed to the outer frame.
                         base = documentElem.createElement("base");
                         base.setAttribute("target", "_parent");
                         child.insertBefore(base, child.firstChild);
