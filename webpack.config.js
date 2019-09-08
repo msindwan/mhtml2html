@@ -11,9 +11,6 @@ const path = require('path');
 
 module.exports = {
     entry: path.join(__dirname, 'src', 'mhtml2html.js'),
-    externals: {
-        jsdom: 'jsdom'
-    },
     module: {
         rules: [
             {

@@ -9,34 +9,8 @@
  * Copyright(c) 2016 Mayank Sindwani
  **/
 
-'use strict';
-
-const quotedPrintable = require('quoted-printable');
-const b64toa = require('btoa');
-const url = require('url');
-
-let _mhtml2html, dom;
-
-// Loads runtime dependencies.
-function loadDependencies() {
-    // Localize any existing module named mhtml2html.
-    if (typeof window !== 'undefined') {
-        _mhtml2html = window.mhtml2html;
-    }
-
-    if (typeof DOMParser === 'undefined') {
-        // eslint-disable-next-line
-        const parser = __non_webpack_require__('jsdom').jsdom;
-        dom = (asset) => {
-            return parser(asset, {});
-        };
-    } else {
-        const parser = new DOMParser();
-        dom = (asset) => {
-            return parser.parseFromString(asset, "text/html");
-        };
-    }
-}
+const QuotedPrintable = require('quoted-printable');
+const Base64 = require('base-64');
 
 // Asserts a condition.
 function assert(condition, error) {
@@ -44,6 +18,40 @@ function assert(condition, error) {
         throw new Error(error);
     }
     return true;
+}
+
+// Default DOM parser (browser only).
+function defaultDOMParser(asset) {
+    assert(typeof DOMParser !== 'undefined', 'No DOM parser available');
+    return {
+        window: {
+            document: new DOMParser().parseFromString(asset, "text/html")
+        }
+    };
+}
+
+// Returns an absolute url from base and relative paths.
+function absoluteURL(base, relative) {
+    if (relative.indexOf('http://') === 0 || relative.indexOf('https://') === 0) {
+        return relative;
+    }
+
+    const stack = base.split('/');
+    const parts = relative.split('/');
+
+    stack.pop();
+
+    for (let i = 0; i < parts.length; i++) {
+        if (parts[i] == ".") {
+            continue;
+        } else if (parts[i] == "..") {
+            stack.pop();
+        } else {
+            stack.push(parts[i]);
+        }
+    }
+
+    return stack.join('/');
 }
 
 // Replace asset references with the corresponding data.
@@ -56,14 +64,17 @@ function replaceReferences(media, base, asset) {
         reference = asset.substring(i, asset.indexOf(')', i));
 
         // Get the absolute path of the referenced asset.
-        const path = url.resolve(base, reference.replace(/(\"|\')/g,''));
+        const path = absoluteURL(base, reference.replace(/(\"|\')/g,''));
         if (media[path] != null) {
+            if (media[path].type === 'text/css') {
+                media[path].data = replaceReferences(media, base, media[path].data);
+            }
             // Replace the reference with an encoded version of the resource.
             try {
                 const embeddedAsset = `'data:${media[path].type};base64,${(
                     media[path].encoding === 'base64' ?
                         media[path].data :
-                        b64toa(media[path].data)
+                        Base64.encode(media[path].data)
                 )}'`;
                 asset = `${asset.substring(0, i)}${embeddedAsset}${asset.substring(i + reference.length)}`;
             } catch(e) {
@@ -78,27 +89,15 @@ function replaceReferences(media, base, asset) {
 const mhtml2html = {
 
     /**
-     * No Conflict
-     *
-     * Description: Resets the module that was previously defined for browser conflict resolution.
-     * @returns mhtml2html as a localized object.
-     */
-    noConflict: () => {
-        if (typeof window !== 'undefined') {
-            window.mhtml2html = _mhtml2html;
-        }
-        return mhtml2html;
-    },
-
-    /**
      * Parse
      *
      * Description: Returns an object representing the mhtml and its resources.
      * @param {mhtml} // The mhtml string.
      * @param {html_only} // A flag to determine which parsed object to return.
+     * @param {parseDOM} // The callback to parse an HTML string.
      * @returns an html document without resources if html_only === true; an MHTML parsed object otherwise.
      */
-    parse: (mhtml, html_only) => {
+    parse: (mhtml, html_only = false, parseDOM = defaultDOMParser) => {
         const MHTML_FSM = {
             MHTML_HEADERS : 0,
             MTHML_CONTENT : 1,
@@ -138,20 +137,19 @@ const mhtml2html = {
             const line = mhtml.substring(j, i);
 
             // Return the (decoded) line.
-            switch(encoding) {
-                case "quoted-printable":
-                    return quotedPrintable.decode(line);
-                case "base64":
-                    return line.trim();
-                default:
-                    return line;
+            if (encoding === 'quoted-printable') {
+                return QuotedPrintable.decode(line);
             }
+            if (encoding === 'base64') {
+                return line.trim();
+            }
+            return line;
         }
 
         // Splits headers from the first instance of ':'.
         function splitHeaders(line, obj) {
-            let m;
-            if ((m = line.indexOf(':')) > -1) {
+            const m = line.indexOf(':');
+            if (m > -1) {
                 key = line.substring(0, m).trim();
                 obj[key] = line.substring(m + 1, line.length).trim();
             } else {
@@ -240,7 +238,6 @@ const mhtml2html = {
 
                 // Map data to content.
                 case MHTML_FSM.MHTML_DATA: {
-
                     next = getLine(encoding);
 
                     // Build the decoded string.
@@ -256,7 +253,7 @@ const mhtml2html = {
 
                     // Ignore assets if 'html_only' is set.
                     if (html_only === true && typeof index !== 'undefined') {
-                        return dom(asset.data);
+                        return parseDOM(asset.data);
                     }
 
                     // Set the finishing state if there are no more characters.
@@ -278,9 +275,10 @@ const mhtml2html = {
      *
      * Description: Accepts an mhtml string or parsed object and returns the converted html.
      * @param {mhtml} // The mhtml string or object.
+     * @param {parseDOM} // The callback to parse an HTML string.
      * @returns an html document element.
      */
-    convert: (mhtml) => {
+    convert: (mhtml, parseDOM = defaultDOMParser) => {
         let utf8String, b64String; // Encoded references.
         let index, media, frames;  // Record-keeping.
         let style, base, img;      // DOM objects.
@@ -301,7 +299,8 @@ const mhtml2html = {
         assert(typeof index  === "string", 'MHTML error: invalid index' );
         assert(media[index] && media[index].type === "text/html", 'MHTML error: invalid index');
 
-        const documentElem = dom(media[index].data);
+        const dom = parseDOM(media[index].data);
+        const documentElem = dom.window.document;
         const nodes = [ documentElem ];
 
         // Merge resources into the document.
@@ -349,15 +348,15 @@ const mhtml2html = {
                             // Embed the image into the document.
                             switch(media[src].encoding) {
                                 case 'quoted-printable':
-                                    utf8String = quotedPrintable.decode(media[src].data);
-                                    img = `data:${media[src].type};utf8,${utf8String}`;
+                                    utf8String = QuotedPrintable.decode(media[src].data);
+                                    img = `data:${media[src].type};utf8,${escape(utf8String)}`;
                                     break;
                                 case 'base64':
                                     img = `data:${media[src].type};base64,${media[src].data}`;
                                     break;
                                 default:
                                     try {
-                                        b64String = b64toa(media[src].data);
+                                        b64String = Base64.encode(media[src].data);
                                         img = `data:${media[src].type};base64,${b64String}`;
                                     } catch(e) {
                                         console.warn(e);
@@ -380,9 +379,8 @@ const mhtml2html = {
                 nodes.push(child);
             });
         }
-        return documentElem;
+        return dom;
     }
 };
 
-loadDependencies();
 module.exports = mhtml2html;

@@ -39,13 +39,6 @@ console.log(html);
 
 ## API
 
-### noConflict
-
-`mhtml2html.noConflict();`
-
-* Resets the module that was previously defined for browser conflict resolution.
-* Returns a localized version of mhtml2html.
-
 ### parse
 
 `mhtml2html.parse(mhtml_string, html_only = false);`
@@ -70,9 +63,10 @@ Otherwise it returns an MHTML parsed object:
 
 ### convert
 
-`mhtml2html.convert(mhtml_string or mhtml_object);`
+`mhtml2html.convert(mhtml_string or mhtml_object, parseDOM);`
 
 * Accepts an MHTML String or parsed MHTML Object.
+* Accepts a callback to parse DOM strings (default's to DOMParser available in a browser context)
 * Returns an html document element.
 
 ## Development
