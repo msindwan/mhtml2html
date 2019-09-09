@@ -93,11 +93,11 @@ const mhtml2html = {
      *
      * Description: Returns an object representing the mhtml and its resources.
      * @param {mhtml} // The mhtml string.
-     * @param {html_only} // A flag to determine which parsed object to return.
+     * @param {htmlOnly} // A flag to determine which parsed object to return.
      * @param {parseDOM} // The callback to parse an HTML string.
-     * @returns an html document without resources if html_only === true; an MHTML parsed object otherwise.
+     * @returns an html document without resources if htmlOnly === true; an MHTML parsed object otherwise.
      */
-    parse: (mhtml, html_only = false, parseDOM = defaultDOMParser) => {
+    parse: (mhtml, htmlOnly = false, parseDOM = defaultDOMParser) => {
         const MHTML_FSM = {
             MHTML_HEADERS : 0,
             MTHML_CONTENT : 1,
@@ -251,8 +251,8 @@ const mhtml2html = {
                         asset.data = decodeURIComponent(escape(asset.data));
                     } catch (e) { e; }
 
-                    // Ignore assets if 'html_only' is set.
-                    if (html_only === true && typeof index !== 'undefined') {
+                    // Ignore assets if 'htmlOnly' is set.
+                    if (htmlOnly === true && typeof index !== 'undefined') {
                         return parseDOM(asset.data);
                     }
 

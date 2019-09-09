@@ -8,7 +8,7 @@
 
 ## Usage
 
-`mhtml2html` is compatible with Node >= v4.3.2.
+`mhtml2html` is compatible with Node >= v10.
 
 **It has only been tested with MHTML files built and used with the latest versions of Chrome**
 
@@ -24,28 +24,47 @@ Or include it as a script in your webpage:
 <script src="https://unpkg.com/mhtml2html@<VERSION>" type="javascript" />
 ```
 
-### Example
+### Node.js Example
+
+mhtml2html can be used via the command line:
+
+```sh
+$ mhtml2html <input.mhtml> <output.html>
+```
+
+For programmatic usage, mhtml2html can be used provided a WHATWG DOM parser implementation (e.g [jsdom](https://github.com/jsdom/jsdom)):
 
 ```js
-const mhtml = '<your MHTML string>';
-const mhtmlParsed = mhtml2html.parse(mhtml);
-const html = mhtml2html.convert(mhtmlParsed);
-console.log(html);
+const mhtml2html = require('mhtml2html');
+const { JSDOM } = require("jsdom");
 
-// Alternatively you could convert the result directly and have
-// it implicitly parsed i.e:
-// const html = mhtml2html.convert(mhtml);
+const mhtml = '<your MHTML string>';
+const htmlDoc = mhtml2html.convert(mhtml, (html) => new JSDOM(html));
+console.log(htmlDoc);
+```
+
+### Browser Example
+
+By default, mhtml2html will use the DOMParser available in most browsers:
+
+```js
+import mhtml2html from 'mhtml2html';
+
+const mhtml = '<your MHTML string>';
+const html = mhtml2html.convert(mhtml);
+console.log(html);
 ```
 
 ## API
 
 ### parse
 
-`mhtml2html.parse(mhtml_string, html_only = false);`
+`mhtml2html.parse(mhtml, htmlOnly = false, parseDOM = <function>);`
 
-* Accepts an MHTML String.
-* If html_only is true, returns the html document without resources.
-Otherwise it returns an MHTML parsed object:
+* mhtml: An MHTML String.
+* htmlOnly: If set to true, returns the html document without resources.
+* parseDOM: A callback that accepts a DOM string and returns a window object (defaults to `DOMParser` only available in browsers)
+* Returns an html document without resources if `htmlOnly` is set to true. Otherwise it returns an MHTML parsed object:
 
 ``` json
 {
@@ -63,11 +82,11 @@ Otherwise it returns an MHTML parsed object:
 
 ### convert
 
-`mhtml2html.convert(mhtml_string or mhtml_object, parseDOM);`
+`mhtml2html.convert(mhtml, parseDOM = <function>);`
 
-* Accepts an MHTML String or parsed MHTML Object.
-* Accepts a callback to parse DOM strings (default's to DOMParser available in a browser context)
-* Returns an html document element.
+* mhtml: An MHTML String or MHTML parsed object.
+* parseDOM: A callback that accepts a DOM string and returns a window object (defaults to `DOMParser` only available in browsers)
+* Returns an html window element.
 
 ## Development
 
