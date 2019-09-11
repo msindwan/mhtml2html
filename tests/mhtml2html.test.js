@@ -119,7 +119,7 @@ describe('Test converting MHTML to HTML', function () {
 
             doc = mhtml2html.convert(data);
             chai.expect(typeof doc).to.equal('object');
-            chai.expect(doc).to.have.property('documentElement');
+            chai.expect(doc).to.have.property('window');
             done();
         });
     });
@@ -133,7 +133,7 @@ describe('Test converting MHTML to HTML', function () {
             doc = mhtml2html.parse(data);
             doc = mhtml2html.convert(doc);
 
-            chai.expect(doc).to.have.property('documentElement');
+            chai.expect(doc).to.have.property('window');
             done();
         });
     });

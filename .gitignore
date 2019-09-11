@@ -1,8 +1,9 @@
 # Node Modules
 node_modules
 
-# MHTML
-/*.mhtml
+# MHTML and HTML
+.mhtml
+.html
 
 # Build
 dist
