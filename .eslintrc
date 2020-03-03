@@ -1,22 +1,22 @@
 {
-	"parserOptions": {
-		"ecmaVersion": 6,
-		"sourceType": "module"
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "sourceType": "module"
 	},
-	"env": {
-		"browser": true,
-		"node": true
-	},
-	"rules": {
-		"semi": 2,
-		"indent": [1, 4, {"SwitchCase": 1}],
-		"no-console": 0,
-		"eol-last": 1,
-		"react/prop-types": 0,
-		"no-control-regex": 0,
-		"no-fallthrough": 0,
-		"no-useless-escape": 0,
-		"max-len": ["error", 131]
-   },
-   "extends": ["eslint:recommended"]
+    "env": {
+        "browser": true,
+        "node": true
+    },
+    "rules": {
+        "semi": 2,
+        "indent": [1, 4, {"SwitchCase": 1}],
+        "no-console": 0,
+        "eol-last": 1,
+        "react/prop-types": 0,
+        "no-control-regex": 0,
+        "no-fallthrough": 0,
+        "no-useless-escape": 0,
+        "max-len": ["error", 131]
+    },
+    "extends": ["eslint:recommended"]
 }
