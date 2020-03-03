@@ -13,23 +13,35 @@
 
 const mhtml2html = require('./dist/mhtml2html');
 const { JSDOM } = require("jsdom");
+const yargs = require("yargs");
 const fs = require('fs');
 
-// Ensure that an input and output path is provided.
-if (process.argv[2] === undefined || process.argv[3] === undefined) {
-    throw new Error("Path is required. Usage : mhtml2html <input.mhtml> <output.html>");
-}
+yargs
+    .command('$0 <input> <output>', 'Converts an mhtml file to a single html file', (yargs) => {
+        yargs.positional('input', {
+            describe: 'The path to the input mhtml file',
+            type: 'string',
+        }).positional('output', {
+            describe: 'The path to the output html file',
+            type: 'string'
+        })
+    }, (argv) => {
+        fs.readFile(argv.input, 'utf8',  (err, data) => {
+            if (err) {
+                throw err;
+            }
 
-// Read the file provided and return the html document as a string.
-fs.readFile(process.argv[2], 'utf8',  (err, data) => {
-    if (err) {
-        throw err;
-    }
-
-    const doc = mhtml2html.convert(data, (html) => new JSDOM(html));
-    fs.writeFile(process.argv[3], doc.serialize(), err => {
-        if (err) {
-            return console.log(err);
-        }
-    });
-});
+            const doc = mhtml2html.convert(data, { convertIframes: argv.convertIframes, parseDOM: (html) => new JSDOM(html) });
+            fs.writeFile(argv.output, doc.serialize(), err => {
+                if (err) {
+                    return console.log(err);
+                }
+            });
+        });
+    })
+    .option('convertIframes', {
+        alias: 'i',
+        type: 'boolean',
+        description: 'Include iframes in the converted output'
+    })
+    .argv

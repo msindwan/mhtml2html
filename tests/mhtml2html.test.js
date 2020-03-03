@@ -138,6 +138,28 @@ describe('Test converting MHTML to HTML', function () {
         });
     });
 
+    it("Should convert valid MHTML with iframes disabled", function(done) {
+        this.timeout(5000);
+
+        readMHTML('iframes.mhtml', (data) => {
+            const doc = mhtml2html.convert(data, { convertIframes: false });
+            const iframe = doc.window.document.querySelector('iframe.result');
+            chai.expect(iframe.src.startsWith('cid')).to.be.true;
+            done();
+        });
+    });
+
+    it('Should convert valid MHTML with iframes enabled', function(done) {
+        this.timeout(5000);
+
+        readMHTML('iframes.mhtml', (data) => {
+            const doc = mhtml2html.convert(data, { convertIframes: true });
+            const iframe = doc.window.document.querySelector('iframe.result');
+            chai.expect(iframe.src.startsWith('data:text/html;charset=utf-8,')).to.be.true;
+            done();
+        });
+    });
+
     it("Should raise an exception for invalid MHTML string (Missing Boundary Header)", function(done) {
         readMHTML('missing_boundary_header.mhtml', (data) => {
             chai.expect(() => { mhtml2html.convert(data); }).to.throw('Missing boundary from document headers; Line 7');
