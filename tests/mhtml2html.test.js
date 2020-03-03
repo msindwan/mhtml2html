@@ -52,7 +52,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
 describe('Test parsing MHTML', function () {
 
-    it("Should parse valid MHTML", function(done) {
+    it('Should parse valid MHTML', function(done) {
         readMHTML('portfolio.mhtml', (data) => {
             let doc;
 
@@ -79,28 +79,28 @@ describe('Test parsing MHTML', function () {
         });
     });
 
-    it("Should raise an exception for invalid MHTML (Missing Headers)", function(done) {
+    it('Should raise an exception for invalid MHTML (Missing Headers)', function(done) {
         readMHTML('missing_headers.mhtml', (data) => {
             chai.expect(() => { mhtml2html.parse(data); }).to.throw('ID or location header not provided;  Line 26');
             done();
         });
     });
 
-    it("Should raise an exception for invalid MHTML (Missing Boundary Header)", function(done) {
+    it('Should raise an exception for invalid MHTML (Missing Boundary Header)', function(done) {
         readMHTML('missing_boundary_header.mhtml', (data) => {
             chai.expect(() => { mhtml2html.parse(data); }).to.throw('Missing boundary from document headers; Line 7');
             done();
         });
     });
 
-    it("Should raise an exception for invalid MHTML (Missing Asset Boundary)", function(done) {
+    it('Should raise an exception for invalid MHTML (Missing Asset Boundary)', function(done) {
         readMHTML('missing_boundary.mhtml', (data) => {
             chai.expect(() => { mhtml2html.parse(data); }).to.throw('Expected boundary; Line 9');
             done();
         });
     });
 
-    it("Should raise an exception for invalid MHTML (Unexpected EOF)", function(done) {
+    it('Should raise an exception for invalid MHTML (Unexpected EOF)', function(done) {
         readMHTML('unexpected_eof.mhtml', (data) => {
             chai.expect(() => { mhtml2html.parse(data); }).to.throw('Unexpected EOF');
             done();
@@ -111,7 +111,7 @@ describe('Test parsing MHTML', function () {
 
 describe('Test converting MHTML to HTML', function () {
 
-    it("Should convert valid MHTML from string", function(done) {
+    it('Should convert valid MHTML from string', function(done) {
         this.timeout(5000);
 
         readMHTML('portfolio.mhtml', (data) => {
@@ -124,7 +124,7 @@ describe('Test converting MHTML to HTML', function () {
         });
     });
 
-    it("Should convert valid MHTML from parsed object", function(done) {
+    it('Should convert valid MHTML from parsed object', function(done) {
         this.timeout(5000);
 
         readMHTML('portfolio.mhtml', (data) => {
@@ -138,7 +138,7 @@ describe('Test converting MHTML to HTML', function () {
         });
     });
 
-    it("Should convert valid MHTML with iframes disabled", function(done) {
+    it('Should convert valid MHTML with iframes disabled', function(done) {
         this.timeout(5000);
 
         readMHTML('iframes.mhtml', (data) => {
@@ -160,14 +160,14 @@ describe('Test converting MHTML to HTML', function () {
         });
     });
 
-    it("Should raise an exception for invalid MHTML string (Missing Boundary Header)", function(done) {
+    it('Should raise an exception for invalid MHTML string (Missing Boundary Header)', function(done) {
         readMHTML('missing_boundary_header.mhtml', (data) => {
             chai.expect(() => { mhtml2html.convert(data); }).to.throw('Missing boundary from document headers; Line 7');
             done();
         });
     });
 
-    it("Should raise an exception for invalid MHTML object", function(done) {
+    it('Should raise an exception for invalid MHTML object', function(done) {
         chai.expect(() => { mhtml2html.convert({ }); }).to.throw('MHTML error: invalid frames');
         done();
     });
