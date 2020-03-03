@@ -12,8 +12,8 @@
  **/
 
 const mhtml2html = require('./dist/mhtml2html');
-const { JSDOM } = require("jsdom");
-const yargs = require("yargs");
+const { JSDOM } = require('jsdom');
+const yargs = require('yargs');
 const fs = require('fs');
 
 yargs
