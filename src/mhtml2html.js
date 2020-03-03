@@ -236,7 +236,7 @@ const mhtml2html = {
                             frames[id] = asset;
                         }
 
-                        // Keep track of resources by loccation.
+                        // Keep track of resources by location.
                         if (typeof location !== 'undefined' && typeof media[location] === 'undefined') {
                             media[location] = asset;
                         }
