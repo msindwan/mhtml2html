@@ -24,7 +24,7 @@ For programmatic usage, mhtml2html can be used provided a WHATWG DOM parser impl
 
 ```js
 const mhtml2html = require('mhtml2html');
-const { JSDOM } = require("jsdom");
+const { JSDOM } = require('jsdom');
 
 const mhtml = '<your MHTML string>';
 const htmlDoc = mhtml2html.convert(mhtml, { parseDOM: (html) => new JSDOM(html) });
@@ -63,17 +63,25 @@ console.log(html);
 
 * mhtml: An MHTML String.
 * options.htmlOnly: If set to true, returns the html document without resources.
-* options.parseDOM: A callback that accepts a DOM string and returns a window object (defaults to `DOMParser` only available in browsers)
+* options.parseDOM: A callback that accepts a DOM string and returns a window object (defaults to `DOMParser` only available in browsers).
 * Returns an html document without resources if `htmlOnly` is set to true. Otherwise it returns an MHTML parsed object:
 
 ``` json
 {
     "index" : "<html-index-url>",
-    "assets": {
+    "media": {
         "<asset-url>" : {
             "data" : "<resource-string>",
             "id": "<frame-id>",
-            "type": "<resource-type",
+            "type": "<resource-type>",
+            "encoding": "<resource-encoding>"
+        }
+    },
+    "frames": {
+        "<frame-id>": {
+            "data": "<resource-string>",
+            "id": "<frame-id>",
+            "type:": "<resource-type>",
             "encoding": "<resource-encoding>"
         }
     }
@@ -86,7 +94,7 @@ console.log(html);
 
 * mhtml: An MHTML String or MHTML parsed object.
 * options.convertIframes: Whether or not to include iframes in the converted response (defaults to false).
-* options.parseDOM: A callback that accepts a DOM string and returns a window object (defaults to `DOMParser` only available in browsers)
+* options.parseDOM: A callback that accepts a DOM string and returns a window object (defaults to `DOMParser` only available in browsers).
 * Returns an html window element.
 
 ## Development
@@ -98,7 +106,7 @@ console.log(html);
 
 To build and test mhtml2html:
 
-1. If node_modules haven't been installed already, run `yarn install` from the root directory.
+1. If `node_modules` haven't been installed already, run `yarn install` from the root directory.
 2. Run `yarn test` to build and test the source code.
 
 ## License
