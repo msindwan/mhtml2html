@@ -1,6 +1,6 @@
 {
   "name": "mhtml2html",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Converts an mhtml document to a single html document",
   "author": "Mayank Sindwani",
   "license": "MIT",
@@ -24,7 +24,7 @@
     "prebuild": "yarn lint",
     "build": "webpack --mode=production",
     "pretest": "yarn build",
-    "test": "karma start --single-run"
+    "test": "yarn mocha tests/ && karma start --single-run"
   },
   "engines": {
     "node": ">=10"
@@ -32,7 +32,8 @@
   "dependencies": {
     "base-64": "^0.1.0",
     "jsdom": "^15.1.1",
-    "quoted-printable": "^1.0.1"
+    "quoted-printable": "^1.0.1",
+    "yargs": "^15.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.6.0",

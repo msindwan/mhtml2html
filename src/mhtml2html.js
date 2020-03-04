@@ -85,6 +85,18 @@ function replaceReferences(media, base, asset) {
     return asset;
 }
 
+// Converts the provided asset to a data URI based on the encoding.
+function convertAssetToDataURI(asset) {
+    switch(asset.encoding) {
+        case 'quoted-printable':
+            return `data:${asset.type};utf8,${escape(QuotedPrintable.decode(asset.data))}`;
+        case 'base64':
+            return `data:${asset.type};base64,${asset.data}`;
+        default:
+            return `data:${asset.type};base64,${Base64.encode(asset.data)}`;
+    }
+}
+
 // Main module.
 const mhtml2html = {
 
@@ -93,11 +105,11 @@ const mhtml2html = {
      *
      * Description: Returns an object representing the mhtml and its resources.
      * @param {mhtml} // The mhtml string.
-     * @param {htmlOnly} // A flag to determine which parsed object to return.
-     * @param {parseDOM} // The callback to parse an HTML string.
+     * @param {options.htmlOnly} // A flag to determine which parsed object to return.
+     * @param {options.parseDOM} // The callback to parse an HTML string.
      * @returns an html document without resources if htmlOnly === true; an MHTML parsed object otherwise.
      */
-    parse: (mhtml, htmlOnly = false, parseDOM = defaultDOMParser) => {
+    parse: (mhtml, { htmlOnly = false, parseDOM  = defaultDOMParser } = {}) => {
         const MHTML_FSM = {
             MHTML_HEADERS : 0,
             MTHML_CONTENT : 1,
@@ -224,7 +236,7 @@ const mhtml2html = {
                             frames[id] = asset;
                         }
 
-                        // Associate the first frame with the location.
+                        // Keep track of resources by location.
                         if (typeof location !== 'undefined' && typeof media[location] === 'undefined') {
                             media[location] = asset;
                         }
@@ -275,11 +287,11 @@ const mhtml2html = {
      *
      * Description: Accepts an mhtml string or parsed object and returns the converted html.
      * @param {mhtml} // The mhtml string or object.
-     * @param {parseDOM} // The callback to parse an HTML string.
+     * @param {options.convertIframes} // Whether or not to include iframes in the converted response (defaults to false).
+     * @param {options.parseDOM} // The callback to parse an HTML string.
      * @returns an html document element.
      */
-    convert: (mhtml, parseDOM = defaultDOMParser) => {
-        let utf8String, b64String; // Encoded references.
+    convert: (mhtml, { convertIframes = false, parseDOM = defaultDOMParser } = {}) => {
         let index, media, frames;  // Record-keeping.
         let style, base, img;      // DOM objects.
         let href, src;             // References.
@@ -346,28 +358,34 @@ const mhtml2html = {
                         img = null;
                         if (typeof media[src] !== 'undefined' && media[src].type.includes('image')) {
                             // Embed the image into the document.
-                            switch(media[src].encoding) {
-                                case 'quoted-printable':
-                                    utf8String = QuotedPrintable.decode(media[src].data);
-                                    img = `data:${media[src].type};utf8,${escape(utf8String)}`;
-                                    break;
-                                case 'base64':
-                                    img = `data:${media[src].type};base64,${media[src].data}`;
-                                    break;
-                                default:
-                                    try {
-                                        b64String = Base64.encode(media[src].data);
-                                        img = `data:${media[src].type};base64,${b64String}`;
-                                    } catch(e) {
-                                        console.warn(e);
-                                    }
-                                    break;
+                            try {
+                                img = convertAssetToDataURI(media[src]);
+                            } catch(e) {
+                                console.warn(e);
                             }
                             if (img !== null) {
                                 child.setAttribute('src', img);
                             }
                         }
                         child.style.cssText = replaceReferences(media, index, child.style.cssText);
+                        break;
+
+                    case 'IFRAME':
+                        if (convertIframes === true && src) {
+                            const id = `<${src.split('cid:')[1]}>`;
+                            const frame = frames[id];
+
+                            if (frame && frame.type === 'text/html') {
+                                const iframe = mhtml2html.convert({
+                                    media: Object.assign({}, media, { [id] : frame }),
+                                    frames: frames,
+                                    index: id,
+                                }, { convertIframes, parseDOM });
+                                child.src = `data:text/html;charset=utf-8,${encodeURIComponent(
+                                    iframe.window.document.documentElement.outerHTML
+                                )}`;
+                            }
+                        }
                         break;
 
                     default:
