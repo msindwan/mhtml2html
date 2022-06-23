@@ -31,7 +31,7 @@
   },
   "dependencies": {
     "base-64": "^0.1.0",
-    "jsdom": "^15.1.1",
+    "jsdom": "^16.5.0",
     "quoted-printable": "^1.0.1",
     "yargs": "^15.1.0"
   },
